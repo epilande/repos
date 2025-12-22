@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+/repos
+*.exe
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Config files
+.reposrc.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+

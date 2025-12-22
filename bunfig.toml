@@ -1,0 +1,8 @@
+[install]
+# Use exact versions for reproducibility
+exact = true
+
+[run]
+# Enable hot reloading during development
+watch = ["src/**/*.ts", "src/**/*.tsx"]
+

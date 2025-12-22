@@ -1,0 +1,11 @@
+{
+  "github": {
+    "host": "github.com",
+    "apiUrl": "https://api.github.com"
+  },
+  "org": "my-org",
+  "daysThreshold": 90,
+  "parallel": 10,
+  "timeout": 10000
+}
+

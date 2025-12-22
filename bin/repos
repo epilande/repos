@@ -1,0 +1,24 @@
+#!/bin/bash
+# Wrapper script to run repos CLI with bun
+
+# Resolve symlinks to get the actual script location
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+# Find bun - check common locations
+if command -v bun &> /dev/null; then
+  BUN="bun"
+elif [ -x "$HOME/.bun/bin/bun" ]; then
+  BUN="$HOME/.bun/bin/bun"
+else
+  echo "Error: bun not found. Install from https://bun.sh" >&2
+  exit 1
+fi
+
+exec "$BUN" run "$SCRIPT_DIR/../src/index.ts" "$@"
+
