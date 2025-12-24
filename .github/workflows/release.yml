@@ -70,10 +70,13 @@ jobs:
           cd dist
           for dir in */; do
             name="${dir%/}"
-            mv "$dir$name" "./$name"
-            rmdir "$dir"
-            chmod +x "$name"
+            mv "${dir}${name}" "${name}.tmp"
           done
+          rm -rf */
+          for f in *.tmp; do
+            mv "$f" "${f%.tmp}"
+          done
+          chmod +x repos-*
           ls -la
 
       - name: Generate checksums
