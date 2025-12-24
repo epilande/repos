@@ -6,7 +6,7 @@
   <strong>An interactive CLI tool for managing multiple git repositories.</strong>
 </p>
 
----
+![demo](https://github.com/user-attachments/assets/297aa11b-1eec-4363-adb4-c551c4143ad5)
 
 ## ❓ Why?
 
