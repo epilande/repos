@@ -6,11 +6,11 @@
   <strong>An interactive CLI tool for managing multiple git repositories.</strong>
 </p>
 
-![demo](https://github.com/user-attachments/assets/297aa11b-1eec-4363-adb4-c551c4143ad5)
+![demo](https://github.com/user-attachments/assets/5d454315-f7e8-4c27-a956-d7733419f584)
 
 ## ❓ Why?
 
-Managing dozens of repositories across an organization is tedious. You constantly need to:
+Managing hundreds of repositories across an organization is tedious. You constantly need to:
 
 - Check which repos have uncommitted changes
 - Pull the latest updates across all projects
@@ -273,6 +273,3 @@ repos/
 
 </details>
 
-## 📄 License
-
-MIT
