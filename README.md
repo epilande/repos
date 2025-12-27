@@ -22,11 +22,13 @@ Managing hundreds of repositories across an organization is tedious. You constan
 ## ✨ Features
 
 - 🎯 **Interactive Mode**: Run `repos` without arguments for a menu-driven TUI experience
+- 🔀 **Git-like Commands**: Familiar commands (`fetch`, `pull`, `diff`, `checkout`) work across all repos
 - 📊 **Terminal UI**: Progress bars, tables, spinners, and colored output
 - ⚡ **Parallel Operations**: Fast updates with configurable concurrency
 - 🐙 **GitHub Integration**: Clone repos from any GitHub org (Cloud or Enterprise)
 - 🔧 **Smart Defaults**: Detects `gh` CLI config and respects `.gitignore` patterns
 - 📁 **Config File Support**: Save your settings in `.reposrc.json`
+- 🛠️ **Escape Hatch**: Run any command across repos with `repos exec`
 
 ## 📦 Installation
 
@@ -82,10 +84,11 @@ bun link  # Link globally for development
 3. Pull the latest changes across all repos:
 
    ```sh
-   repos update
+   repos pull
    ```
 
 4. Clone all active repos from your organization:
+
    ```sh
    repos clone --org my-org
    ```
@@ -102,15 +105,19 @@ repos
 
 ### Commands
 
-| Command         | Description                       |
-| :-------------- | :-------------------------------- |
-| `repos`         | Launch interactive menu           |
-| `repos init`    | Setup wizard for configuration    |
-| `repos status`  | Check status of all repositories  |
-| `repos update`  | Pull latest changes for all repos |
-| `repos clone`   | Clone repos from GitHub org       |
-| `repos cleanup` | Revert changes in repositories    |
-| `repos config`  | View or modify configuration      |
+| Command                    | Description                             |
+| :------------------------- | :-------------------------------------- |
+| `repos`                    | Launch interactive menu                 |
+| `repos init`               | Setup wizard for configuration          |
+| `repos status`             | Check status of all repositories        |
+| `repos fetch`              | Fetch latest changes from remotes       |
+| `repos pull`               | Pull latest changes for all repos       |
+| `repos diff`               | Show diffs across all repositories      |
+| `repos checkout <branch>`  | Switch branches across all repos        |
+| `repos clone`              | Clone repos from GitHub org             |
+| `repos clean`              | Revert changes in repositories          |
+| `repos exec "<command>"`   | Run arbitrary command across all repos  |
+| `repos config`             | View or modify configuration            |
 
 ### Status Command
 
@@ -132,14 +139,24 @@ Repository          Branch         Modified  Staged  Untracked  Sync
 ✓ auth-service      feature/oauth  0         0       0          ↑3
 ```
 
-### Update Command
+### Fetch Command
 
 ```sh
-repos update                   # Update all repos
-repos update --dry-run         # Preview what would be updated
-repos update --quiet           # Minimal output
-repos update --parallel 5      # Limit concurrent operations
-repos update --filter 'api-*'  # Update only matching repos
+repos fetch                   # Fetch all repos
+repos fetch --prune           # Remove stale remote-tracking refs
+repos fetch --all             # Fetch from all remotes
+repos fetch --dry-run         # Preview what would be fetched
+repos fetch --filter 'api-*'  # Fetch only matching repos
+```
+
+### Pull Command
+
+```sh
+repos pull                   # Pull all repos
+repos pull --dry-run         # Preview what would be updated
+repos pull --quiet           # Minimal output
+repos pull --parallel 5      # Limit concurrent operations
+repos pull --filter 'api-*'  # Pull only matching repos
 ```
 
 > [!NOTE]
@@ -157,18 +174,54 @@ repos clone --shallow              # Shallow clone (faster)
 repos clone --dry-run              # Preview what would be cloned
 ```
 
-### Cleanup Command
+### Diff Command
 
 ```sh
-repos cleanup --dry-run         # Preview what would be cleaned
-repos cleanup                   # Revert tracked file changes
-repos cleanup --all             # Also remove untracked files
-repos cleanup --force           # Skip confirmation prompt
-repos cleanup --filter 'api-*'  # Clean only matching repos
+repos diff                   # Show diffs across all repos
+repos diff --stat            # Show diffstat summary
+repos diff --quiet           # Only list repos with changes
+repos diff --parallel 5      # Limit concurrent operations
+repos diff --filter 'api-*'  # Diff only matching repos
+```
+
+### Checkout Command
+
+```sh
+repos checkout main              # Switch to 'main' branch
+repos checkout -b feature/new    # Create and switch to new branch
+repos checkout main --force      # Skip repos with uncommitted changes
+repos checkout main --parallel 5 # Limit concurrent operations
+repos checkout main --filter '*' # Checkout only matching repos
+```
+
+> [!NOTE]
+> Repos with uncommitted changes are skipped unless `--force` is used.
+
+### Clean Command
+
+```sh
+repos clean --dry-run         # Preview what would be cleaned
+repos clean                   # Revert tracked file changes
+repos clean --all             # Also remove untracked files
+repos clean --force           # Skip confirmation prompt
+repos clean --filter 'api-*'  # Clean only matching repos
 ```
 
 > [!WARNING]
-> The cleanup command will revert changes. Always use `--dry-run` first!
+> The clean command will revert changes. Always use `--dry-run` first!
+
+### Exec Command
+
+```sh
+repos exec "git log -1 --oneline"  # Show last commit in each repo
+repos exec "npm install"           # Run npm install in all repos
+repos exec "pwd" --quiet           # Only show repos with output
+repos exec "make test" --parallel 5  # Run with limited concurrency
+repos exec "git branch" --filter 'api-*'  # Run only in matching repos
+```
+
+> [!TIP]
+> Use `repos exec` as an escape hatch for any command not directly supported.
 
 ### Config Command
 

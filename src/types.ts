@@ -87,6 +87,41 @@ export interface CleanupOptions {
   interactive?: boolean;
 }
 
+export interface FetchOptions {
+  dryRun?: boolean;
+  prune?: boolean;
+  all?: boolean;
+  parallel?: number;
+  filter?: string;
+  quiet?: boolean;
+  interactive?: boolean;
+}
+
+export interface DiffOptions {
+  filter?: string;
+  quiet?: boolean;
+  stat?: boolean;
+  parallel?: number;
+  interactive?: boolean;
+}
+
+export interface CheckoutOptions {
+  branch: string;
+  filter?: string;
+  create?: boolean;
+  force?: boolean;
+  parallel?: number;
+  interactive?: boolean;
+}
+
+export interface ExecOptions {
+  command: string;
+  filter?: string;
+  parallel?: number;
+  quiet?: boolean;
+  interactive?: boolean;
+}
+
 export interface ConfigOptions {
   get?: string;
   set?: string;

@@ -105,7 +105,9 @@ export async function getRepoStatus(repoPath: string): Promise<RepoStatus> {
 
   try {
     const statusResult = await $`git -C ${repoPath} status --porcelain`.quiet();
-    const statusLines = statusResult.text().trim().split("\n").filter(Boolean);
+    // Split first, then filter - don't use trim() as it removes leading spaces
+    // which are significant in git porcelain output (e.g., " M file.txt")
+    const statusLines = statusResult.text().split("\n").filter((line) => line.length >= 2);
 
     for (const line of statusLines) {
       const indexStatus = line[0];
@@ -355,15 +357,31 @@ export async function cloneRepo(
   }
 }
 
+export interface FetchRepoOptions {
+  prune?: boolean;
+  all?: boolean;
+}
+
 export async function fetchRepo(
   repoPath: string,
+  options: FetchRepoOptions = {},
 ): Promise<RepoOperationResult> {
   const name = repoPath.split("/").pop() || repoPath;
   const timeout = await getTimeout();
 
   try {
+    const args = ["-C", repoPath, "fetch"];
+
+    if (options.prune) {
+      args.push("--prune");
+    }
+
+    if (options.all) {
+      args.push("--all");
+    }
+
     const result = await runWithTimeout(
-      $`git -C ${repoPath} fetch`.quiet().nothrow(),
+      $`git ${args}`.quiet().nothrow(),
       timeout,
     );
 
@@ -388,6 +406,150 @@ export async function fetchRepo(
       success: false,
       message: "error",
       error: formatNetworkError(error, "Fetch"),
+    };
+  }
+}
+
+export interface DiffResult {
+  name: string;
+  hasDiff: boolean;
+  diff: string;
+  stat: string;
+}
+
+export async function diffRepo(repoPath: string): Promise<DiffResult> {
+  const name = repoPath.split("/").pop() || repoPath;
+
+  try {
+    const diffResult = await $`git -C ${repoPath} diff`.quiet().nothrow();
+    const diff = diffResult.text().trim();
+
+    const statResult = await $`git -C ${repoPath} diff --stat`.quiet().nothrow();
+    const stat = statResult.text().trim();
+
+    return {
+      name,
+      hasDiff: diff.length > 0,
+      diff,
+      stat,
+    };
+  } catch (error) {
+    return {
+      name,
+      hasDiff: false,
+      diff: "",
+      stat: "",
+    };
+  }
+}
+
+export interface CheckoutOptions {
+  create?: boolean;
+}
+
+export async function checkoutBranch(
+  repoPath: string,
+  branch: string,
+  options: CheckoutOptions = {},
+): Promise<RepoOperationResult> {
+  const name = repoPath.split("/").pop() || repoPath;
+
+  try {
+    const args = ["-C", repoPath, "checkout"];
+
+    if (options.create) {
+      args.push("-b");
+    }
+
+    args.push(branch);
+
+    const result = await $`git ${args}`.quiet().nothrow();
+
+    if (result.exitCode !== 0) {
+      const output = result.text() || result.stderr.toString();
+
+      // Check if branch doesn't exist
+      if (output.includes("did not match any") || output.includes("pathspec")) {
+        return {
+          name,
+          success: false,
+          message: "not found",
+          error: `Branch '${branch}' not found`,
+        };
+      }
+
+      // Check if branch already exists when trying to create
+      if (output.includes("already exists")) {
+        return {
+          name,
+          success: false,
+          message: "exists",
+          error: `Branch '${branch}' already exists`,
+        };
+      }
+
+      return {
+        name,
+        success: false,
+        message: "error",
+        error: output || "Checkout failed",
+      };
+    }
+
+    return {
+      name,
+      success: true,
+      message: options.create ? "created" : "switched",
+      details: `→ ${branch}`,
+    };
+  } catch (error) {
+    return {
+      name,
+      success: false,
+      message: "error",
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export interface ExecResult {
+  name: string;
+  success: boolean;
+  exitCode: number;
+  output: string;
+  error?: string;
+}
+
+export async function execInRepo(
+  repoPath: string,
+  command: string,
+): Promise<ExecResult> {
+  const name = repoPath.split("/").pop() || repoPath;
+  const timeout = await getTimeout();
+
+  try {
+    const result = await runWithTimeout(
+      $`sh -c ${command}`.cwd(repoPath).quiet().nothrow(),
+      timeout,
+    );
+
+    const output = result.text().trim();
+    const stderr = result.stderr.toString().trim();
+
+    return {
+      name,
+      success: result.exitCode === 0,
+      exitCode: result.exitCode,
+      output: output || stderr,
+      error: result.exitCode !== 0 ? stderr || output : undefined,
+    };
+  } catch (error) {
+    return {
+      name,
+      success: false,
+      exitCode: 1,
+      output: "",
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }

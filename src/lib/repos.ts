@@ -46,18 +46,6 @@ export async function getAllRepoStatuses(
   return statuses;
 }
 
-export async function getReposWithChanges(
-  repos: string[]
-): Promise<RepoStatus[]> {
-  const statuses = await getAllRepoStatuses(repos);
-  return statuses.filter((status) => !status.isClean);
-}
-
-export async function getReposBehind(repos: string[]): Promise<RepoStatus[]> {
-  const statuses = await getAllRepoStatuses(repos);
-  return statuses.filter((status) => status.behind > 0);
-}
-
 export async function directoryExists(path: string): Promise<boolean> {
   try {
     const stats = await stat(path);
