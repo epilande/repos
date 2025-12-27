@@ -105,7 +105,9 @@ export async function getRepoStatus(repoPath: string): Promise<RepoStatus> {
 
   try {
     const statusResult = await $`git -C ${repoPath} status --porcelain`.quiet();
-    const statusLines = statusResult.text().trim().split("\n").filter(Boolean);
+    // Split first, then filter - don't use trim() as it removes leading spaces
+    // which are significant in git porcelain output (e.g., " M file.txt")
+    const statusLines = statusResult.text().split("\n").filter((line) => line.length >= 2);
 
     for (const line of statusLines) {
       const indexStatus = line[0];

@@ -98,7 +98,7 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
   const [results, setResults] = useState<RepoOperationResult[]>([]);
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
-  const [startTime, setStartTime] = useState(Date.now());
+  const [startTime] = useState(Date.now());
   const [parallel, setParallel] = useState(10);
   const cancelledRef = useRef(false);
 
@@ -190,7 +190,7 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
     runFetch();
   }, [options]);
 
-  useInput((input, key) => {
+  useInput((_, key) => {
     if (key.escape) {
       if (phase === "fetching") {
         cancelledRef.current = true;
@@ -284,8 +284,8 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
 
       {(phase === "done" || phase === "cancelled") && (
         <Box flexDirection="column" marginTop={1}>
-          <Text color="gray">{"─".repeat(50)}</Text>
-          <Box marginTop={1} flexDirection="column">
+          <Divider marginTop={0} marginBottom={1} />
+          <Box flexDirection="column">
             <Text bold>{phase === "cancelled" ? "Cancelled" : "Summary"}:</Text>
             <Box>
               <Box width={25}>

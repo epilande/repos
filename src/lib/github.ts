@@ -62,11 +62,6 @@ export async function getAuthToken(
   return process.env.GH_ENTERPRISE_TOKEN || process.env.GITHUB_TOKEN || null;
 }
 
-export async function hasAuth(host: string = "github.com"): Promise<boolean> {
-  const token = await getAuthToken(host);
-  return token !== null;
-}
-
 async function githubFetch<T>(
   endpoint: string,
   config: GitHubConfig,

@@ -47,7 +47,7 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
   const [results, setResults] = useState<ExecResult[]>([]);
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
-  const [startTime, setStartTime] = useState(Date.now());
+  const [startTime] = useState(Date.now());
   const [parallel, setParallel] = useState(10);
   const cancelledRef = useRef(false);
 
@@ -124,7 +124,7 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
     runExec();
   }, [options]);
 
-  useInput((input, key) => {
+  useInput((_, key) => {
     if (key.escape) {
       if (phase === "executing") {
         cancelledRef.current = true;
