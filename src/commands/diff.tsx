@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { render, Box, Text, useInput } from "ink";
 import Spinner from "ink-spinner";
 import { findRepos, filterRepos } from "../lib/repos.js";
 import { diffRepo, type DiffResult } from "../lib/git.js";
+import { loadConfig } from "../lib/config.js";
+import { ProgressBar } from "../components/ProgressBar.js";
 import { Divider } from "../components/Divider.js";
 import type { DiffOptions } from "../types.js";
 
@@ -11,7 +13,7 @@ interface DiffAppProps {
   onComplete?: () => void;
 }
 
-type Phase = "finding" | "diffing" | "done";
+type Phase = "finding" | "diffing" | "cancelling" | "done" | "cancelled";
 
 function DiffOutput({ result, showStat }: { result: DiffResult; showStat: boolean }) {
   const content = showStat ? result.stat : result.diff;
@@ -32,10 +34,14 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
   const [phase, setPhase] = useState<Phase>("finding");
   const [repos, setRepos] = useState<string[]>([]);
   const [results, setResults] = useState<DiffResult[]>([]);
+  const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [startTime] = useState(Date.now());
+  const [parallel, setParallel] = useState(10);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
-    if (!onComplete && phase === "done") {
+    if (!onComplete && (phase === "done" || phase === "cancelled")) {
       setTimeout(() => process.exit(0), 100);
     }
   }, [phase, onComplete]);
@@ -43,6 +49,10 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
   useEffect(() => {
     async function runDiff() {
       try {
+        const config = await loadConfig();
+        const parallelCount = options.parallel ?? config.parallel ?? 10;
+        setParallel(parallelCount);
+
         let repoPaths = await findRepos();
 
         if (repoPaths.length === 0) {
@@ -61,19 +71,39 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
         }
 
         setRepos(repoPaths);
+        setProgress({ completed: 0, total: repoPaths.length });
         setPhase("diffing");
 
-        const allResults: DiffResult[] = [];
+        const allResults: (DiffResult | null)[] = [];
+        let completed = 0;
+        let index = 0;
+        let wasCancelled = false;
 
-        for (const repoPath of repoPaths) {
-          const result = await diffRepo(repoPath);
-          if (result.hasDiff) {
-            allResults.push(result);
+        const processNext = async (): Promise<void> => {
+          while (index < repoPaths.length) {
+            if (cancelledRef.current) {
+              wasCancelled = true;
+              return;
+            }
+            const currentIndex = index++;
+            const repoPath = repoPaths[currentIndex];
+            const result = await diffRepo(repoPath);
+
+            allResults[currentIndex] = result.hasDiff ? result : null;
+            completed++;
+            setProgress({ completed, total: repoPaths.length });
+            setResults([...allResults.filter((r): r is DiffResult => r !== null)]);
           }
-        }
+        };
 
-        setResults(allResults);
-        setPhase("done");
+        const workers = Array(Math.min(parallelCount, repoPaths.length))
+          .fill(null)
+          .map(() => processNext());
+
+        await Promise.all(workers);
+
+        setResults(allResults.filter((r): r is DiffResult => r !== null));
+        setPhase(wasCancelled ? "cancelled" : "done");
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
         setPhase("done");
@@ -84,8 +114,13 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
   }, [options]);
 
   useInput((_, key) => {
-    if (key.escape && phase === "done" && onComplete) {
-      onComplete();
+    if (key.escape) {
+      if (phase === "diffing") {
+        cancelledRef.current = true;
+        setPhase("cancelling");
+      } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+        onComplete();
+      }
     }
   });
 
@@ -115,21 +150,47 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
     );
   }
 
-  if (phase === "diffing") {
+  const duration = Math.round((Date.now() - startTime) / 1000);
+
+  if (phase === "diffing" || phase === "cancelling") {
     return (
-      <Box>
-        <Text color="cyan">
-          <Spinner type="dots" />
-        </Text>
-        <Box marginLeft={1}>
-          <Text>Checking for changes...</Text>
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text bold color="cyan">
+            Repository Diff
+          </Text>
+          <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
         </Box>
+
+        <Box marginBottom={1}>
+          <ProgressBar
+            value={progress.completed}
+            total={progress.total}
+            width={40}
+          />
+        </Box>
+
+        {phase === "cancelling" ? (
+          <Box marginTop={1}>
+            <Text color="yellow">
+              <Spinner type="dots" />
+            </Text>
+            <Box marginLeft={1}>
+              <Text color="yellow">Cancelling... waiting for in-progress operations to finish</Text>
+            </Box>
+          </Box>
+        ) : (
+          <Box marginTop={1}>
+            <Text color="gray">Press Escape to cancel</Text>
+          </Box>
+        )}
       </Box>
     );
   }
 
   const reposWithChanges = results.length;
-  const cleanRepos = repos.length - reposWithChanges;
+  const reposProcessed = phase === "cancelled" ? progress.completed : repos.length;
+  const cleanRepos = reposProcessed - reposWithChanges;
 
   return (
     <Box flexDirection="column">
@@ -137,10 +198,10 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
         <Text bold color="cyan">
           Repository Diff
         </Text>
-        <Text color="gray"> • {repos.length} repos checked</Text>
+        <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
       </Box>
 
-      {reposWithChanges === 0 ? (
+      {reposWithChanges === 0 && phase !== "cancelled" ? (
         <Box marginBottom={1}>
           <Text color="green">✓ All repositories are clean (no uncommitted changes)</Text>
         </Box>
@@ -165,12 +226,12 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
       <Box flexDirection="column" marginTop={1}>
         <Divider marginTop={0} marginBottom={1} />
         <Box flexDirection="column">
-          <Text bold>Summary:</Text>
+          <Text bold>{phase === "cancelled" ? "Cancelled" : "Summary"}:</Text>
           <Box>
             <Box width={25}>
               <Text>Repositories checked:</Text>
             </Box>
-            <Text>{repos.length}</Text>
+            <Text>{reposProcessed}</Text>
           </Box>
           {reposWithChanges > 0 && (
             <Box>
@@ -186,10 +247,32 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
             </Box>
             <Text color="green">{cleanRepos}</Text>
           </Box>
+          {phase === "cancelled" && repos.length - reposProcessed > 0 && (
+            <Box>
+              <Box width={25}>
+                <Text color="yellow">Not processed:</Text>
+              </Box>
+              <Text color="yellow">{repos.length - reposProcessed}</Text>
+            </Box>
+          )}
+          <Box>
+            <Box width={25}>
+              <Text color="gray">Duration:</Text>
+            </Box>
+            <Text color="gray">{duration}s</Text>
+          </Box>
         </Box>
       </Box>
 
-      {onComplete && (
+      {phase === "cancelled" && (
+        <Box marginTop={1}>
+          <Text color="yellow">
+            Operation cancelled. {reposProcessed} of {repos.length} repositories checked.
+          </Text>
+        </Box>
+      )}
+
+      {(phase === "done" || phase === "cancelled") && onComplete && (
         <Box marginTop={1}>
           <Text color="gray">Press Escape to return to menu</Text>
         </Box>

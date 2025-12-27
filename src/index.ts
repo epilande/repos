@@ -170,11 +170,13 @@ program
   .option("-q, --quiet", "Only list repos with changes (no diff output)")
   .option("--stat", "Show diffstat summary instead of full diff")
   .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
+  .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
   .action(async (options) => {
     await runDiff({
       quiet: options.quiet,
       stat: options.stat,
       filter: options.filter,
+      parallel: options.parallel,
     });
   });
 
@@ -184,12 +186,14 @@ program
   .option("-b, --create", "Create branch if it doesn't exist")
   .option("--force", "Skip repos with uncommitted changes")
   .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
+  .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
   .action(async (branch, options) => {
     await runCheckout({
       branch,
       create: options.create,
       force: options.force,
       filter: options.filter,
+      parallel: options.parallel,
     });
   });
 

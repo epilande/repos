@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { render, Box, Text, useInput } from "ink";
 import Spinner from "ink-spinner";
 import { findRepos, filterRepos } from "../lib/repos.js";
 import { checkoutBranch, getRepoStatus } from "../lib/git.js";
+import { loadConfig } from "../lib/config.js";
+import { ProgressBar } from "../components/ProgressBar.js";
 import { Divider } from "../components/Divider.js";
 import type { CheckoutOptions, RepoOperationResult } from "../types.js";
 
@@ -11,7 +13,7 @@ interface CheckoutAppProps {
   onComplete?: () => void;
 }
 
-type Phase = "finding" | "checking" | "done";
+type Phase = "finding" | "checking" | "cancelling" | "done" | "cancelled";
 
 function getResultIcon(result: RepoOperationResult): { icon: string; color: string } {
   if (result.success) {
@@ -59,10 +61,14 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
   const [phase, setPhase] = useState<Phase>("finding");
   const [repos, setRepos] = useState<string[]>([]);
   const [results, setResults] = useState<RepoOperationResult[]>([]);
+  const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [startTime] = useState(Date.now());
+  const [parallel, setParallel] = useState(10);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
-    if (!onComplete && phase === "done") {
+    if (!onComplete && (phase === "done" || phase === "cancelled")) {
       setTimeout(() => process.exit(0), 100);
     }
   }, [phase, onComplete]);
@@ -70,6 +76,17 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
   useEffect(() => {
     async function runCheckout() {
       try {
+        // Validate branch name is provided
+        if (!options.branch || options.branch.trim() === "") {
+          setError("Branch name is required");
+          setPhase("done");
+          return;
+        }
+
+        const config = await loadConfig();
+        const parallelCount = options.parallel ?? config.parallel ?? 10;
+        setParallel(parallelCount);
+
         let repoPaths = await findRepos();
 
         if (repoPaths.length === 0) {
@@ -88,35 +105,62 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
         }
 
         setRepos(repoPaths);
+        setProgress({ completed: 0, total: repoPaths.length });
         setPhase("checking");
 
         const allResults: RepoOperationResult[] = [];
+        let completed = 0;
+        let index = 0;
+        let wasCancelled = false;
 
-        for (const repoPath of repoPaths) {
-          const name = repoPath.split("/").pop() || repoPath;
-
-          if (!options.force) {
-            const status = await getRepoStatus(repoPath);
-            if (status.modified > 0 || status.staged > 0) {
-              allResults.push({
-                name,
-                success: false,
-                message: "skipped",
-                error: "Has uncommitted changes (use --force to skip)",
-              });
-              continue;
+        const processNext = async (): Promise<void> => {
+          while (index < repoPaths.length) {
+            if (cancelledRef.current) {
+              wasCancelled = true;
+              return;
             }
+            const currentIndex = index++;
+            const repoPath = repoPaths[currentIndex];
+            const name = repoPath.split("/").pop() || repoPath;
+
+            let result: RepoOperationResult;
+
+            if (!options.force) {
+              const status = await getRepoStatus(repoPath);
+              if (status.modified > 0 || status.staged > 0) {
+                result = {
+                  name,
+                  success: false,
+                  message: "skipped",
+                  error: "Has uncommitted changes (use --force to skip)",
+                };
+                allResults[currentIndex] = result;
+                completed++;
+                setProgress({ completed, total: repoPaths.length });
+                setResults([...allResults.filter(Boolean)]);
+                continue;
+              }
+            }
+
+            result = await checkoutBranch(repoPath, options.branch, {
+              create: options.create,
+            });
+
+            allResults[currentIndex] = result;
+            completed++;
+            setProgress({ completed, total: repoPaths.length });
+            setResults([...allResults.filter(Boolean)]);
           }
+        };
 
-          const result = await checkoutBranch(repoPath, options.branch, {
-            create: options.create,
-          });
+        const workers = Array(Math.min(parallelCount, repoPaths.length))
+          .fill(null)
+          .map(() => processNext());
 
-          allResults.push(result);
-        }
+        await Promise.all(workers);
 
-        setResults(allResults);
-        setPhase("done");
+        setResults(allResults.filter(Boolean));
+        setPhase(wasCancelled ? "cancelled" : "done");
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
         setPhase("done");
@@ -127,8 +171,13 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
   }, [options]);
 
   useInput((_, key) => {
-    if (key.escape && phase === "done" && onComplete) {
-      onComplete();
+    if (key.escape) {
+      if (phase === "checking") {
+        cancelledRef.current = true;
+        setPhase("cancelling");
+      } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+        onComplete();
+      }
     }
   });
 
@@ -158,15 +207,40 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
     );
   }
 
-  if (phase === "checking") {
+  const duration = Math.round((Date.now() - startTime) / 1000);
+
+  if (phase === "checking" || phase === "cancelling") {
     return (
-      <Box>
-        <Text color="cyan">
-          <Spinner type="dots" />
-        </Text>
-        <Box marginLeft={1}>
-          <Text>Checking out branch '{options.branch}'...</Text>
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text bold color="cyan">
+            Checkout Branch: {options.branch}
+          </Text>
+          <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
         </Box>
+
+        <Box marginBottom={1}>
+          <ProgressBar
+            value={progress.completed}
+            total={progress.total}
+            width={40}
+          />
+        </Box>
+
+        {phase === "cancelling" ? (
+          <Box marginTop={1}>
+            <Text color="yellow">
+              <Spinner type="dots" />
+            </Text>
+            <Box marginLeft={1}>
+              <Text color="yellow">Cancelling... waiting for in-progress operations to finish</Text>
+            </Box>
+          </Box>
+        ) : (
+          <Box marginTop={1}>
+            <Text color="gray">Press Escape to cancel</Text>
+          </Box>
+        )}
       </Box>
     );
   }
@@ -183,7 +257,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
         <Text bold color="cyan">
           Checkout Branch: {options.branch}
         </Text>
-        <Text color="gray"> • {repos.length} repos</Text>
+        <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
         {options.create && <Text color="gray"> • create if missing</Text>}
       </Box>
 
@@ -196,12 +270,12 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
       <Box flexDirection="column" marginTop={1}>
         <Divider marginTop={0} marginBottom={1} />
         <Box flexDirection="column">
-          <Text bold>Summary:</Text>
+          <Text bold>{phase === "cancelled" ? "Cancelled" : "Summary"}:</Text>
           <Box>
             <Box width={25}>
-              <Text>Repositories checked:</Text>
+              <Text>Repositories processed:</Text>
             </Box>
-            <Text>{repos.length}</Text>
+            <Text>{results.length}</Text>
           </Box>
           {switched > 0 && (
             <Box>
@@ -243,10 +317,32 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
               <Text color="red">{errors}</Text>
             </Box>
           )}
+          {phase === "cancelled" && repos.length - results.length > 0 && (
+            <Box>
+              <Box width={25}>
+                <Text color="yellow">Not processed:</Text>
+              </Box>
+              <Text color="yellow">{repos.length - results.length}</Text>
+            </Box>
+          )}
+          <Box>
+            <Box width={25}>
+              <Text color="gray">Duration:</Text>
+            </Box>
+            <Text color="gray">{duration}s</Text>
+          </Box>
         </Box>
       </Box>
 
-      {notFound > 0 && !options.create && (
+      {phase === "cancelled" && (
+        <Box marginTop={1}>
+          <Text color="yellow">
+            Operation cancelled. {results.length} of {repos.length} repositories processed.
+          </Text>
+        </Box>
+      )}
+
+      {notFound > 0 && !options.create && phase !== "cancelled" && (
         <Box marginTop={1}>
           <Text color="yellow">
             Tip: Use --create (-b) to create the branch in repos where it doesn't exist.
@@ -254,7 +350,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
         </Box>
       )}
 
-      {onComplete && (
+      {(phase === "done" || phase === "cancelled") && onComplete && (
         <Box marginTop={1}>
           <Text color="gray">Press Escape to return to menu</Text>
         </Box>

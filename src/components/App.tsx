@@ -55,7 +55,7 @@ const menuGroups: MenuGroup[] = [
     category: "repo",
     label: "Repository Management",
     items: [
-      { label: "Clone from org", value: "clone" },
+      { label: "Clone", value: "clone" },
       { label: "Clean", value: "clean" },
       { label: "Exec", value: "exec" },
     ],
@@ -64,8 +64,8 @@ const menuGroups: MenuGroup[] = [
     category: "settings",
     label: "Settings",
     items: [
-      { label: "Configure", value: "config" },
-      { label: "Setup wizard", value: "init" },
+      { label: "Config", value: "config" },
+      { label: "Init", value: "init" },
       { label: "Exit", value: "exit" },
     ],
   },
@@ -218,6 +218,14 @@ function getCommandFields(
           placeholder: "e.g., api-*",
           hint: "Only check repos matching this pattern",
         },
+        {
+          name: "parallel",
+          label: "Parallel jobs",
+          type: "number",
+          defaultValue: defaultParallel,
+          placeholder: `default: ${defaultParallel}`,
+          hint: "Number of concurrent diff operations",
+        },
       ];
 
     case "checkout":
@@ -249,6 +257,14 @@ function getCommandFields(
           type: "text",
           placeholder: "e.g., api-*",
           hint: "Only checkout in repos matching this pattern",
+        },
+        {
+          name: "parallel",
+          label: "Parallel jobs",
+          type: "number",
+          defaultValue: defaultParallel,
+          placeholder: `default: ${defaultParallel}`,
+          hint: "Number of concurrent checkout operations",
         },
       ];
 
@@ -485,6 +501,7 @@ export function App() {
             quiet: values.quiet as boolean | undefined,
             stat: values.stat as boolean | undefined,
             filter: values.filter as string | undefined,
+            parallel: values.parallel as number | undefined,
             interactive: true,
           },
         });
@@ -497,6 +514,7 @@ export function App() {
             create: values.create as boolean | undefined,
             force: values.force as boolean | undefined,
             filter: values.filter as string | undefined,
+            parallel: values.parallel as number | undefined,
             interactive: true,
           },
         });

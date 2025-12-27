@@ -180,6 +180,7 @@ repos clone --dry-run              # Preview what would be cloned
 repos diff                   # Show diffs across all repos
 repos diff --stat            # Show diffstat summary
 repos diff --quiet           # Only list repos with changes
+repos diff --parallel 5      # Limit concurrent operations
 repos diff --filter 'api-*'  # Diff only matching repos
 ```
 
@@ -189,6 +190,7 @@ repos diff --filter 'api-*'  # Diff only matching repos
 repos checkout main              # Switch to 'main' branch
 repos checkout -b feature/new    # Create and switch to new branch
 repos checkout main --force      # Skip repos with uncommitted changes
+repos checkout main --parallel 5 # Limit concurrent operations
 repos checkout main --filter '*' # Checkout only matching repos
 ```
 

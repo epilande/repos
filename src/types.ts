@@ -101,6 +101,7 @@ export interface DiffOptions {
   filter?: string;
   quiet?: boolean;
   stat?: boolean;
+  parallel?: number;
   interactive?: boolean;
 }
 
@@ -109,6 +110,7 @@ export interface CheckoutOptions {
   filter?: string;
   create?: boolean;
   force?: boolean;
+  parallel?: number;
   interactive?: boolean;
 }
 
