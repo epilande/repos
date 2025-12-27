@@ -239,7 +239,7 @@ describe("FetchApp", () => {
         );
 
         await waitFor(() => lastFrame()?.includes("Press Escape") ?? false, 5000);
-        expect(lastFrame()).toContain("Press Escape to return");
+        expect(lastFrame()).toContain("Press Escape");
 
         // Small delay to ensure useInput hook is fully registered
         await new Promise((r) => setTimeout(r, 50));

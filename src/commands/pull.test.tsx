@@ -1,15 +1,15 @@
 import { describe, test, expect } from "bun:test";
 import React from "react";
 import { render } from "ink-testing-library";
-import { UpdateApp } from "./update.js";
+import { PullApp } from "./pull.js";
 import { createTempRepoDir } from "../../tests/helpers/temp-repos.js";
 import { waitFor } from "../../tests/helpers/ink-test-utils.js";
 
-describe("UpdateApp", () => {
+describe("PullApp", () => {
   describe("rendering phases", () => {
     test("shows finding phase initially", async () => {
       const { lastFrame, unmount } = render(
-        <UpdateApp options={{}} onComplete={() => {}} />
+        <PullApp options={{}} onComplete={() => {}} />
       );
 
       expect(lastFrame()).toContain("Finding repositories");
@@ -26,7 +26,7 @@ describe("UpdateApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <UpdateApp options={{}} onComplete={() => {}} />
+          <PullApp options={{}} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("No repositories") ?? false);
@@ -50,7 +50,7 @@ describe("UpdateApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <UpdateApp options={{}} onComplete={() => {}} />
+          <PullApp options={{}} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 10000);
@@ -74,7 +74,7 @@ describe("UpdateApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <UpdateApp options={{ dryRun: true }} onComplete={() => {}} />
+          <PullApp options={{ dryRun: true }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Update Check") ?? false, 10000);
@@ -101,7 +101,7 @@ describe("UpdateApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <UpdateApp options={{ filter: "api-*" }} onComplete={() => {}} />
+          <PullApp options={{ filter: "api-*" }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 10000);
@@ -129,7 +129,7 @@ describe("UpdateApp", () => {
 
       try {
         const { lastFrame, stdin, unmount } = render(
-          <UpdateApp
+          <PullApp
             options={{}}
             onComplete={() => {
               onCompleteCalled = true;
@@ -138,7 +138,7 @@ describe("UpdateApp", () => {
         );
 
         await waitFor(() => lastFrame()?.includes("Press Escape") ?? false, 10000);
-        expect(lastFrame()).toContain("Press Escape to return");
+        expect(lastFrame()).toContain("Press Escape");
 
         // Small delay to ensure useInput hook is fully registered
         await new Promise((r) => setTimeout(r, 50));

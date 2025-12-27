@@ -9,14 +9,14 @@ import { RepoList, ResultList, OperationStats } from "../components/RepoList.js"
 import { Divider } from "../components/Divider.js";
 import type { CleanupOptions, RepoStatus, RepoOperationResult } from "../types.js";
 
-interface CleanupAppProps {
+interface CleanAppProps {
   options: CleanupOptions;
   onComplete?: () => void;
 }
 
 type Phase = "finding" | "confirming" | "cleaning" | "cancelling" | "done" | "confirmLiveRun" | "cancelled";
 
-export function CleanupApp({ options, onComplete }: CleanupAppProps) {
+export function CleanApp({ options, onComplete }: CleanAppProps) {
   const [phase, setPhase] = useState<Phase>("finding");
   const [dirtyRepos, setDirtyRepos] = useState<RepoStatus[]>([]);
   const [results, setResults] = useState<RepoOperationResult[]>([]);
@@ -375,8 +375,8 @@ export function CleanupApp({ options, onComplete }: CleanupAppProps) {
   );
 }
 
-export async function runCleanup(options: CleanupOptions): Promise<void> {
-  const { waitUntilExit } = render(<CleanupApp options={options} />);
+export async function runClean(options: CleanupOptions): Promise<void> {
+  const { waitUntilExit } = render(<CleanApp options={options} />);
   await waitUntilExit();
 }
 

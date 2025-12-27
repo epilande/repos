@@ -1,17 +1,17 @@
 import { describe, test, expect } from "bun:test";
 import React from "react";
 import { render } from "ink-testing-library";
-import { CleanupApp } from "./cleanup.js";
+import { CleanApp } from "./clean.js";
 import { createTempRepoDir } from "../../tests/helpers/temp-repos.js";
 import { waitFor } from "../../tests/helpers/ink-test-utils.js";
 import { writeFile } from "fs/promises";
 import { join } from "path";
 
-describe("CleanupApp", () => {
+describe("CleanApp", () => {
   describe("rendering phases", () => {
     test("shows finding phase initially", async () => {
       const { lastFrame, unmount } = render(
-        <CleanupApp options={{}} onComplete={() => {}} />
+        <CleanApp options={{}} onComplete={() => {}} />
       );
 
       expect(lastFrame()).toContain("Finding repositories");
@@ -28,7 +28,7 @@ describe("CleanupApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{}} onComplete={() => {}} />
+          <CleanApp options={{}} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("No repositories") ?? false);
@@ -52,7 +52,7 @@ describe("CleanupApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{}} onComplete={() => {}} />
+          <CleanApp options={{}} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("All repositories are already clean") ?? false, 5000);
@@ -78,7 +78,7 @@ describe("CleanupApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{}} onComplete={() => {}} />
+          <CleanApp options={{}} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("WARNING") ?? false, 5000);
@@ -105,7 +105,7 @@ describe("CleanupApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{ dryRun: true }} onComplete={() => {}} />
+          <CleanApp options={{ dryRun: true }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Dry Run") ?? false, 5000);
@@ -133,7 +133,7 @@ describe("CleanupApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{ force: true }} onComplete={() => {}} />
+          <CleanApp options={{ force: true }} onComplete={() => {}} />
         );
 
         // Should skip confirmation and go to cleaning
@@ -171,7 +171,7 @@ describe("CleanupApp", () => {
 
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{ filter: "api-*", dryRun: true }} onComplete={() => {}} />
+          <CleanApp options={{ filter: "api-*", dryRun: true }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Dry Run") ?? false, 5000);

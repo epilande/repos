@@ -4,9 +4,9 @@ import { render } from "ink";
 import React from "react";
 import { App } from "./components/App.js";
 import { runStatus } from "./commands/status.js";
-import { runUpdate } from "./commands/update.js";
+import { runPull } from "./commands/pull.js";
 import { runClone } from "./commands/clone.js";
-import { runCleanup } from "./commands/cleanup.js";
+import { runClean } from "./commands/clean.js";
 import { runConfig } from "./commands/config.js";
 import { runInit } from "./commands/init.js";
 import { runFetch } from "./commands/fetch.js";
@@ -86,7 +86,7 @@ program
   .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
   .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
   .action(async (options) => {
-    await runUpdate({
+    await runPull({
       dryRun: options.dryRun,
       quiet: options.quiet,
       filter: options.filter,
@@ -103,7 +103,7 @@ program
   .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
   .action(async (options) => {
     showDeprecationWarning("update", "pull");
-    await runUpdate({
+    await runPull({
       dryRun: options.dryRun,
       quiet: options.quiet,
       filter: options.filter,
@@ -139,7 +139,7 @@ program
   .option("-a, --all", "Also remove untracked files")
   .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
   .action(async (options) => {
-    await runCleanup({
+    await runClean({
       dryRun: options.dryRun,
       force: options.force,
       all: options.all,
@@ -156,7 +156,7 @@ program
   .option("--filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
   .action(async (options) => {
     showDeprecationWarning("cleanup", "clean");
-    await runCleanup({
+    await runClean({
       dryRun: options.dryRun,
       force: options.force,
       all: options.all,

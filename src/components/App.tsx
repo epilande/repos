@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Box, Text, useApp, useStdout } from "ink";
 import Spinner from "ink-spinner";
 import { StatusApp } from "../commands/status.js";
-import { UpdateApp } from "../commands/update.js";
+import { PullApp } from "../commands/pull.js";
 import { CloneApp } from "../commands/clone.js";
-import { CleanupApp } from "../commands/cleanup.js";
+import { CleanApp } from "../commands/clean.js";
 import { ConfigApp } from "../commands/config.js";
 import { InitApp } from "../commands/init.js";
 import { FetchApp } from "../commands/fetch.js";
@@ -582,7 +582,7 @@ export function App() {
         );
       case "pull":
         return (
-          <UpdateApp
+          <PullApp
             options={runningCommand.options}
             onComplete={handleCommandComplete}
           />
@@ -617,7 +617,7 @@ export function App() {
         );
       case "clean":
         return (
-          <CleanupApp
+          <CleanApp
             options={runningCommand.options}
             onComplete={handleCommandComplete}
           />
