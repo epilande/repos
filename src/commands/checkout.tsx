@@ -87,7 +87,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
         const parallelCount = options.parallel ?? config.parallel ?? 10;
         setParallel(parallelCount);
 
-        let repoPaths = await findRepos();
+        let repoPaths = await findRepos(options.basePath);
 
         if (repoPaths.length === 0) {
           setError("No repositories found in current directory");

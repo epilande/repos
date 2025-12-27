@@ -4,6 +4,21 @@ import { join } from "path";
 import { tmpdir } from "os";
 import { randomUUID } from "crypto";
 
+/**
+ * Create an empty temp directory for test isolation.
+ * Prevents tests from operating on the actual repository.
+ */
+export async function createEmptyTempDir(): Promise<{ path: string; cleanup: () => Promise<void> }> {
+  const path = join(tmpdir(), `repos-test-empty-${randomUUID().slice(0, 8)}`);
+  await mkdir(path, { recursive: true });
+  return {
+    path,
+    cleanup: async () => {
+      await rm(path, { recursive: true, force: true });
+    },
+  };
+}
+
 export interface TempRepo {
   path: string;
   name: string;

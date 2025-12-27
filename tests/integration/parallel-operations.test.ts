@@ -6,17 +6,13 @@ import { runParallel } from "../../src/lib/repos.js";
 
 describe("Parallel Operations Integration", () => {
   let tempDir: string;
-  let originalCwd: string;
 
   beforeEach(async () => {
-    originalCwd = process.cwd();
     tempDir = `/tmp/parallel-ops-integration-${Date.now()}`;
     await mkdir(tempDir, { recursive: true });
-    process.chdir(tempDir);
   });
 
   afterEach(async () => {
-    process.chdir(originalCwd);
     await rm(tempDir, { recursive: true, force: true });
   });
 
@@ -146,17 +142,17 @@ describe("Parallel Operations Integration", () => {
     test("performs parallel status checks", async () => {
       // Create multiple repos
       for (let i = 1; i <= 5; i++) {
-        const repoName = `repo-${i}`;
-        await $`git init --initial-branch=main ${repoName}`.quiet();
-        await $`git -C ${repoName} config user.email "test@test.com"`.quiet();
-        await $`git -C ${repoName} config user.name "Test"`.quiet();
-        await writeFile(join(repoName, "README.md"), `# Repo ${i}`);
-        await $`git -C ${repoName} add .`.quiet();
-        await $`git -C ${repoName} commit -m "Initial commit"`.quiet();
+        const repoPath = join(tempDir, `repo-${i}`);
+        await $`git init --initial-branch=main ${repoPath}`.quiet();
+        await $`git -C ${repoPath} config user.email "test@test.com"`.quiet();
+        await $`git -C ${repoPath} config user.name "Test"`.quiet();
+        await writeFile(join(repoPath, "README.md"), `# Repo ${i}`);
+        await $`git -C ${repoPath} add .`.quiet();
+        await $`git -C ${repoPath} commit -m "Initial commit"`.quiet();
 
         // Make some dirty
         if (i % 2 === 0) {
-          await writeFile(join(repoName, "README.md"), `# Modified ${i}`);
+          await writeFile(join(repoPath, "README.md"), `# Modified ${i}`);
         }
       }
 
@@ -186,14 +182,14 @@ describe("Parallel Operations Integration", () => {
     test("performs parallel branch checkout", async () => {
       // Create multiple repos with a common branch
       for (let i = 1; i <= 3; i++) {
-        const repoName = `branch-repo-${i}`;
-        await $`git init --initial-branch=main ${repoName}`.quiet();
-        await $`git -C ${repoName} config user.email "test@test.com"`.quiet();
-        await $`git -C ${repoName} config user.name "Test"`.quiet();
-        await writeFile(join(repoName, "README.md"), `# Repo ${i}`);
-        await $`git -C ${repoName} add .`.quiet();
-        await $`git -C ${repoName} commit -m "Initial commit"`.quiet();
-        await $`git -C ${repoName} branch feature-branch`.quiet();
+        const repoPath = join(tempDir, `branch-repo-${i}`);
+        await $`git init --initial-branch=main ${repoPath}`.quiet();
+        await $`git -C ${repoPath} config user.email "test@test.com"`.quiet();
+        await $`git -C ${repoPath} config user.name "Test"`.quiet();
+        await writeFile(join(repoPath, "README.md"), `# Repo ${i}`);
+        await $`git -C ${repoPath} add .`.quiet();
+        await $`git -C ${repoPath} commit -m "Initial commit"`.quiet();
+        await $`git -C ${repoPath} branch feature-branch`.quiet();
       }
 
       const repoPaths = Array.from({ length: 3 }, (_, i) => join(tempDir, `branch-repo-${i + 1}`));

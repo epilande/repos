@@ -1,40 +1,36 @@
 import { describe, test, expect } from "bun:test";
 import React from "react";
 import { render } from "ink-testing-library";
-import { UpdateApp } from "./update.js";
-import { createTempRepoDir } from "../../tests/helpers/temp-repos.js";
+import { PullApp } from "./pull.js";
+import { createTempRepoDir, createEmptyTempDir } from "../../tests/helpers/temp-repos.js";
 import { waitFor } from "../../tests/helpers/ink-test-utils.js";
 
-describe("UpdateApp", () => {
+describe("PullApp", () => {
   describe("rendering phases", () => {
     test("shows finding phase initially", async () => {
-      const { lastFrame, unmount } = render(
-        <UpdateApp options={{}} onComplete={() => {}} />
-      );
-
-      expect(lastFrame()).toContain("Finding repositories");
-      unmount();
+      const { path, cleanup } = await createEmptyTempDir();
+      try {
+        const { lastFrame, unmount } = render(
+          <PullApp options={{ basePath: path }} onComplete={() => {}} />
+        );
+        expect(lastFrame()).toContain("Finding repositories");
+        unmount();
+      } finally {
+        await cleanup();
+      }
     });
 
     test("shows error when no repos found", async () => {
-      const tempDir = `/tmp/empty-update-${Date.now()}`;
-      const { mkdir, rm } = await import("fs/promises");
-      await mkdir(tempDir, { recursive: true });
-
-      const originalCwd = process.cwd();
-      process.chdir(tempDir);
-
+      const { path, cleanup } = await createEmptyTempDir();
       try {
         const { lastFrame, unmount } = render(
-          <UpdateApp options={{}} onComplete={() => {}} />
+          <PullApp options={{ basePath: path }} onComplete={() => {}} />
         );
-
         await waitFor(() => lastFrame()?.includes("No repositories") ?? false);
         expect(lastFrame()).toContain("No repositories found");
         unmount();
       } finally {
-        process.chdir(originalCwd);
-        await rm(tempDir, { recursive: true, force: true });
+        await cleanup();
       }
     });
   });
@@ -45,12 +41,9 @@ describe("UpdateApp", () => {
         { name: "repo-a" },
       ]);
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <UpdateApp options={{}} onComplete={() => {}} />
+          <PullApp options={{ basePath }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 10000);
@@ -59,7 +52,6 @@ describe("UpdateApp", () => {
         expect(frame).toContain("Repositories processed:");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -69,12 +61,9 @@ describe("UpdateApp", () => {
         { name: "repo-a" },
       ]);
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <UpdateApp options={{ dryRun: true }} onComplete={() => {}} />
+          <PullApp options={{ dryRun: true, basePath }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Update Check") ?? false, 10000);
@@ -83,7 +72,6 @@ describe("UpdateApp", () => {
         expect(frame).toContain("Dry Run");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -96,12 +84,9 @@ describe("UpdateApp", () => {
         { name: "webapp" },
       ]);
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <UpdateApp options={{ filter: "api-*" }} onComplete={() => {}} />
+          <PullApp options={{ filter: "api-*", basePath }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 10000);
@@ -110,7 +95,6 @@ describe("UpdateApp", () => {
         expect(frame).toContain("api-server");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -122,15 +106,12 @@ describe("UpdateApp", () => {
         { name: "repo-a" },
       ]);
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       let onCompleteCalled = false;
 
       try {
         const { lastFrame, stdin, unmount } = render(
-          <UpdateApp
-            options={{}}
+          <PullApp
+            options={{ basePath }}
             onComplete={() => {
               onCompleteCalled = true;
             }}
@@ -138,7 +119,7 @@ describe("UpdateApp", () => {
         );
 
         await waitFor(() => lastFrame()?.includes("Press Escape") ?? false, 10000);
-        expect(lastFrame()).toContain("Press Escape to return");
+        expect(lastFrame()).toContain("Press Escape");
 
         // Small delay to ensure useInput hook is fully registered
         await new Promise((r) => setTimeout(r, 50));
@@ -152,7 +133,6 @@ describe("UpdateApp", () => {
         expect(onCompleteCalled).toBe(true);
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });

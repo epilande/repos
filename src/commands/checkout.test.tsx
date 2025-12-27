@@ -3,59 +3,63 @@ import { $ } from "bun";
 import React from "react";
 import { render } from "ink-testing-library";
 import { CheckoutApp } from "./checkout.js";
-import { createTempRepoDir } from "../../tests/helpers/temp-repos.js";
+import { createTempRepoDir, createEmptyTempDir } from "../../tests/helpers/temp-repos.js";
 import { waitFor } from "../../tests/helpers/ink-test-utils.js";
 
 describe("CheckoutApp", () => {
   describe("rendering phases", () => {
     test("shows finding phase initially", async () => {
-      const { lastFrame, unmount } = render(
-        <CheckoutApp options={{ branch: "main" }} onComplete={() => {}} />
-      );
-
-      expect(lastFrame()).toContain("Finding repositories");
-      unmount();
+      const { path, cleanup } = await createEmptyTempDir();
+      try {
+        const { lastFrame, unmount } = render(
+          <CheckoutApp options={{ basePath: path, branch: "main" }} onComplete={() => {}} />
+        );
+        expect(lastFrame()).toContain("Finding repositories");
+        unmount();
+      } finally {
+        await cleanup();
+      }
     });
 
     test("shows error when branch name is empty", async () => {
-      const { lastFrame, unmount } = render(
-        <CheckoutApp options={{ branch: "" }} onComplete={() => {}} />
-      );
-
-      await waitFor(() => lastFrame()?.includes("Branch name is required") ?? false);
-      expect(lastFrame()).toContain("Branch name is required");
-      unmount();
+      const { path, cleanup } = await createEmptyTempDir();
+      try {
+        const { lastFrame, unmount } = render(
+          <CheckoutApp options={{ basePath: path, branch: "" }} onComplete={() => {}} />
+        );
+        await waitFor(() => lastFrame()?.includes("Branch name is required") ?? false);
+        expect(lastFrame()).toContain("Branch name is required");
+        unmount();
+      } finally {
+        await cleanup();
+      }
     });
 
     test("shows error when branch name is whitespace only", async () => {
-      const { lastFrame, unmount } = render(
-        <CheckoutApp options={{ branch: "   " }} onComplete={() => {}} />
-      );
-
-      await waitFor(() => lastFrame()?.includes("Branch name is required") ?? false);
-      expect(lastFrame()).toContain("Branch name is required");
-      unmount();
+      const { path, cleanup } = await createEmptyTempDir();
+      try {
+        const { lastFrame, unmount } = render(
+          <CheckoutApp options={{ basePath: path, branch: "   " }} onComplete={() => {}} />
+        );
+        await waitFor(() => lastFrame()?.includes("Branch name is required") ?? false);
+        expect(lastFrame()).toContain("Branch name is required");
+        unmount();
+      } finally {
+        await cleanup();
+      }
     });
 
     test("shows error when no repos found", async () => {
-      const tempDir = `/tmp/empty-checkout-${Date.now()}`;
-      const { mkdir, rm } = await import("fs/promises");
-      await mkdir(tempDir, { recursive: true });
-
-      const originalCwd = process.cwd();
-      process.chdir(tempDir);
-
+      const { path, cleanup } = await createEmptyTempDir();
       try {
         const { lastFrame, unmount } = render(
-          <CheckoutApp options={{ branch: "main" }} onComplete={() => {}} />
+          <CheckoutApp options={{ basePath: path, branch: "main" }} onComplete={() => {}} />
         );
-
         await waitFor(() => lastFrame()?.includes("No repositories") ?? false);
         expect(lastFrame()).toContain("No repositories found");
         unmount();
       } finally {
-        process.chdir(originalCwd);
-        await rm(tempDir, { recursive: true, force: true });
+        await cleanup();
       }
     });
   });
@@ -68,12 +72,9 @@ describe("CheckoutApp", () => {
 
       await $`git -C ${repos[0].path} branch feature-branch`.quiet();
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CheckoutApp options={{ branch: "feature-branch" }} onComplete={() => {}} />
+          <CheckoutApp options={{ basePath, branch: "feature-branch" }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -83,7 +84,6 @@ describe("CheckoutApp", () => {
         expect(frame).toContain("switched");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -93,12 +93,9 @@ describe("CheckoutApp", () => {
         { name: "repo-a" },
       ]);
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CheckoutApp options={{ branch: "new-feature", create: true }} onComplete={() => {}} />
+          <CheckoutApp options={{ basePath, branch: "new-feature", create: true }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -107,7 +104,6 @@ describe("CheckoutApp", () => {
         expect(frame).toContain("created");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -117,12 +113,9 @@ describe("CheckoutApp", () => {
         { name: "repo-a" },
       ]);
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CheckoutApp options={{ branch: "nonexistent-branch" }} onComplete={() => {}} />
+          <CheckoutApp options={{ basePath, branch: "nonexistent-branch" }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -131,7 +124,6 @@ describe("CheckoutApp", () => {
         expect(frame).toContain("not found");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -146,12 +138,9 @@ describe("CheckoutApp", () => {
       await writeFile(join(repos[0].path, "README.md"), "modified");
       await $`git -C ${repos[0].path} branch feature-branch`.quiet();
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CheckoutApp options={{ branch: "feature-branch" }} onComplete={() => {}} />
+          <CheckoutApp options={{ basePath, branch: "feature-branch" }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -161,7 +150,6 @@ describe("CheckoutApp", () => {
         expect(frame).toContain("Skipped:");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -179,12 +167,9 @@ describe("CheckoutApp", () => {
         await $`git -C ${repo.path} branch feature-branch`.quiet();
       }
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CheckoutApp options={{ branch: "feature-branch", filter: "api-*" }} onComplete={() => {}} />
+          <CheckoutApp options={{ basePath, branch: "feature-branch", filter: "api-*" }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -195,7 +180,6 @@ describe("CheckoutApp", () => {
         expect(frame).not.toContain("webapp");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -209,15 +193,12 @@ describe("CheckoutApp", () => {
 
       await $`git -C ${repos[0].path} branch test-branch`.quiet();
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       let onCompleteCalled = false;
 
       try {
         const { lastFrame, stdin, unmount } = render(
           <CheckoutApp
-            options={{ branch: "test-branch" }}
+            options={{ basePath, branch: "test-branch" }}
             onComplete={() => {
               onCompleteCalled = true;
             }}
@@ -240,7 +221,6 @@ describe("CheckoutApp", () => {
         expect(onCompleteCalled).toBe(true);
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });

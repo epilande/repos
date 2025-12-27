@@ -32,31 +32,24 @@ describe("config.ts", () => {
 
   describe("loadConfig", () => {
     test("returns default config when no config files exist", async () => {
-      // Save original cwd
-      const originalCwd = process.cwd();
-
       // Create a temp directory with no config
       const tempDir = join(tmpdir(), `no-config-${Date.now()}`);
       await mkdir(tempDir, { recursive: true });
-      process.chdir(tempDir);
 
       try {
-        const config = await loadConfig();
+        const config = await loadConfig(tempDir);
         expect(config.parallel).toBe(DEFAULT_CONFIG.parallel);
         expect(config.timeout).toBe(DEFAULT_CONFIG.timeout);
         expect(config.daysThreshold).toBe(DEFAULT_CONFIG.daysThreshold);
         expect(config.github?.host).toBe(DEFAULT_CONFIG.github?.host);
       } finally {
-        process.chdir(originalCwd);
         await rm(tempDir, { recursive: true, force: true });
       }
     });
 
     test("loads config from cwd when it exists", async () => {
-      const originalCwd = process.cwd();
       const tempDir = join(tmpdir(), `cwd-config-${Date.now()}`);
       await mkdir(tempDir, { recursive: true });
-      process.chdir(tempDir);
 
       const customConfig = {
         org: "test-org",
@@ -69,13 +62,12 @@ describe("config.ts", () => {
       );
 
       try {
-        const config = await loadConfig();
+        const config = await loadConfig(tempDir);
         expect(config.org).toBe("test-org");
         expect(config.parallel).toBe(5);
         // Should merge with defaults
         expect(config.timeout).toBe(DEFAULT_CONFIG.timeout);
       } finally {
-        process.chdir(originalCwd);
         await rm(tempDir, { recursive: true, force: true });
       }
     });
@@ -83,10 +75,8 @@ describe("config.ts", () => {
 
   describe("saveConfig", () => {
     test("saves config to cwd", async () => {
-      const originalCwd = process.cwd();
       const tempDir = join(tmpdir(), `save-config-${Date.now()}`);
       await mkdir(tempDir, { recursive: true });
-      process.chdir(tempDir);
 
       const config = {
         org: "saved-org",
@@ -94,7 +84,7 @@ describe("config.ts", () => {
       };
 
       try {
-        await saveConfig(config, "cwd");
+        await saveConfig(config, "cwd", tempDir);
 
         // Verify file was created
         const file = Bun.file(join(tempDir, ".reposrc.json"));
@@ -105,7 +95,6 @@ describe("config.ts", () => {
         expect(saved.org).toBe("saved-org");
         expect(saved.parallel).toBe(15);
       } finally {
-        process.chdir(originalCwd);
         await rm(tempDir, { recursive: true, force: true });
       }
     });
@@ -113,33 +102,27 @@ describe("config.ts", () => {
 
   describe("configExists", () => {
     test("returns false when no config exists", async () => {
-      const originalCwd = process.cwd();
       const tempDir = join(tmpdir(), `no-exist-${Date.now()}`);
       await mkdir(tempDir, { recursive: true });
-      process.chdir(tempDir);
 
       try {
-        const exists = await configExists("cwd");
+        const exists = await configExists("cwd", tempDir);
         expect(exists).toBe(false);
       } finally {
-        process.chdir(originalCwd);
         await rm(tempDir, { recursive: true, force: true });
       }
     });
 
     test("returns true when cwd config exists", async () => {
-      const originalCwd = process.cwd();
       const tempDir = join(tmpdir(), `exist-config-${Date.now()}`);
       await mkdir(tempDir, { recursive: true });
-      process.chdir(tempDir);
 
       await writeFile(join(tempDir, ".reposrc.json"), "{}");
 
       try {
-        const exists = await configExists("cwd");
+        const exists = await configExists("cwd", tempDir);
         expect(exists).toBe(true);
       } finally {
-        process.chdir(originalCwd);
         await rm(tempDir, { recursive: true, force: true });
       }
     });

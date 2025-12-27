@@ -2,34 +2,30 @@ import { describe, test, expect } from "bun:test";
 import React from "react";
 import { render } from "ink-testing-library";
 import { InitApp } from "./init.js";
+import { createEmptyTempDir } from "../../tests/helpers/temp-repos.js";
 import { waitFor } from "../../tests/helpers/ink-test-utils.js";
 
 describe("InitApp", () => {
   describe("rendering phases", () => {
     test("shows checking phase initially", async () => {
-      const { lastFrame, unmount } = render(
-        <InitApp onComplete={() => {}} />
-      );
-
-      expect(lastFrame()).toContain("Checking environment");
-      unmount();
+      const { path, cleanup } = await createEmptyTempDir();
+      try {
+        const { lastFrame, unmount } = render(
+          <InitApp basePath={path} onComplete={() => {}} />
+        );
+        expect(lastFrame()).toContain("Checking environment");
+        unmount();
+      } finally {
+        await cleanup();
+      }
     });
 
     test("proceeds to configuration step after checking", async () => {
-      // Use a temp directory without config
-      const tempDir = `/tmp/init-test-noconfig-${Date.now()}`;
-      const { mkdir, rm } = await import("fs/promises");
-      await mkdir(tempDir, { recursive: true });
-
-      const originalCwd = process.cwd();
-      process.chdir(tempDir);
-
+      const { path, cleanup } = await createEmptyTempDir();
       try {
         const { lastFrame, unmount } = render(
-          <InitApp onComplete={() => {}} />
+          <InitApp basePath={path} onComplete={() => {}} />
         );
-
-        // Should eventually show the wizard or gh-cli detection
         await waitFor(
           () =>
             (lastFrame()?.includes("Setup Wizard") ||
@@ -37,13 +33,10 @@ describe("InitApp", () => {
             false,
           5000
         );
-
-        const frame = lastFrame();
-        expect(frame).toBeTruthy();
+        expect(lastFrame()).toBeTruthy();
         unmount();
       } finally {
-        process.chdir(originalCwd);
-        await rm(tempDir, { recursive: true, force: true });
+        await cleanup();
       }
     });
   });
@@ -56,18 +49,15 @@ describe("InitApp", () => {
       const { join } = await import("path");
       await mkdir(tempDir, { recursive: true });
 
-      // Create a .repos.json file
+      // Create a .reposrc.json file (the correct config filename)
       await writeFile(
-        join(tempDir, ".repos.json"),
+        join(tempDir, ".reposrc.json"),
         JSON.stringify({ org: "test" })
       );
 
-      const originalCwd = process.cwd();
-      process.chdir(tempDir);
-
       try {
         const { lastFrame, unmount } = render(
-          <InitApp onComplete={() => {}} />
+          <InitApp basePath={tempDir} onComplete={() => {}} />
         );
 
         // Wait for either "already exists" or moves past checking
@@ -89,7 +79,6 @@ describe("InitApp", () => {
         }
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await rm(tempDir, { recursive: true, force: true });
       }
     });
@@ -103,16 +92,13 @@ describe("InitApp", () => {
       await mkdir(tempDir, { recursive: true });
 
       await writeFile(
-        join(tempDir, ".repos.json"),
+        join(tempDir, ".reposrc.json"),
         JSON.stringify({ org: "test" })
       );
 
-      const originalCwd = process.cwd();
-      process.chdir(tempDir);
-
       try {
         const { lastFrame, unmount } = render(
-          <InitApp force={true} onComplete={() => {}} />
+          <InitApp force={true} basePath={tempDir} onComplete={() => {}} />
         );
 
         // With force, should proceed to wizard
@@ -130,7 +116,6 @@ describe("InitApp", () => {
         expect(frame).not.toContain("already exists");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await rm(tempDir, { recursive: true, force: true });
       }
     });

@@ -2,7 +2,7 @@ import { describe, test, expect } from "bun:test";
 import React from "react";
 import { render } from "ink-testing-library";
 import { DiffApp } from "./diff.js";
-import { createTempRepoDir } from "../../tests/helpers/temp-repos.js";
+import { createTempRepoDir, createEmptyTempDir } from "../../tests/helpers/temp-repos.js";
 import { waitFor } from "../../tests/helpers/ink-test-utils.js";
 import { writeFile } from "fs/promises";
 import { join } from "path";
@@ -10,33 +10,29 @@ import { join } from "path";
 describe("DiffApp", () => {
   describe("rendering phases", () => {
     test("shows finding phase initially", async () => {
-      const { lastFrame, unmount } = render(
-        <DiffApp options={{}} onComplete={() => {}} />
-      );
-
-      expect(lastFrame()).toContain("Finding repositories");
-      unmount();
+      const { path, cleanup } = await createEmptyTempDir();
+      try {
+        const { lastFrame, unmount } = render(
+          <DiffApp options={{ basePath: path }} onComplete={() => {}} />
+        );
+        expect(lastFrame()).toContain("Finding repositories");
+        unmount();
+      } finally {
+        await cleanup();
+      }
     });
 
     test("shows error when no repos found", async () => {
-      const tempDir = `/tmp/empty-diff-${Date.now()}`;
-      const { mkdir, rm } = await import("fs/promises");
-      await mkdir(tempDir, { recursive: true });
-
-      const originalCwd = process.cwd();
-      process.chdir(tempDir);
-
+      const { path, cleanup } = await createEmptyTempDir();
       try {
         const { lastFrame, unmount } = render(
-          <DiffApp options={{}} onComplete={() => {}} />
+          <DiffApp options={{ basePath: path }} onComplete={() => {}} />
         );
-
         await waitFor(() => lastFrame()?.includes("No repositories") ?? false);
         expect(lastFrame()).toContain("No repositories found");
         unmount();
       } finally {
-        process.chdir(originalCwd);
-        await rm(tempDir, { recursive: true, force: true });
+        await cleanup();
       }
     });
   });
@@ -47,12 +43,9 @@ describe("DiffApp", () => {
         { name: "clean-repo" },
       ]);
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <DiffApp options={{}} onComplete={() => {}} />
+          <DiffApp options={{ basePath }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -61,7 +54,6 @@ describe("DiffApp", () => {
         expect(frame).toContain("All repositories are clean");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -73,12 +65,9 @@ describe("DiffApp", () => {
 
       await writeFile(join(repos[0].path, "README.md"), "modified content");
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <DiffApp options={{}} onComplete={() => {}} />
+          <DiffApp options={{ basePath }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -88,7 +77,6 @@ describe("DiffApp", () => {
         expect(frame).toContain("modified content");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -101,12 +89,9 @@ describe("DiffApp", () => {
 
       await writeFile(join(repos[1].path, "README.md"), "modified");
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <DiffApp options={{ quiet: true }} onComplete={() => {}} />
+          <DiffApp options={{ basePath, quiet: true }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -118,7 +103,6 @@ describe("DiffApp", () => {
         expect(frame).not.toContain("modified content");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -130,12 +114,9 @@ describe("DiffApp", () => {
 
       await writeFile(join(repos[0].path, "README.md"), "modified content");
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <DiffApp options={{ stat: true }} onComplete={() => {}} />
+          <DiffApp options={{ basePath, stat: true }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -145,7 +126,6 @@ describe("DiffApp", () => {
         expect(frame).toContain("modified-repo");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -162,12 +142,9 @@ describe("DiffApp", () => {
         await writeFile(join(repo.path, "README.md"), "modified");
       }
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <DiffApp options={{ filter: "api-*" }} onComplete={() => {}} />
+          <DiffApp options={{ basePath, filter: "api-*" }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -177,7 +154,6 @@ describe("DiffApp", () => {
         expect(frame).not.toContain("webapp");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -192,12 +168,9 @@ describe("DiffApp", () => {
 
       await writeFile(join(repos[1].path, "README.md"), "modified");
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <DiffApp options={{}} onComplete={() => {}} />
+          <DiffApp options={{ basePath }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
@@ -208,7 +181,6 @@ describe("DiffApp", () => {
         expect(frame).toContain("Clean:");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });

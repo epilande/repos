@@ -13,16 +13,13 @@ import {
 
 describe("Git Operations Integration", () => {
   let tempDir: string;
-  let originalCwd: string;
 
   beforeEach(async () => {
-    originalCwd = process.cwd();
     tempDir = `/tmp/git-ops-integration-${Date.now()}`;
     await mkdir(tempDir, { recursive: true });
   });
 
   afterEach(async () => {
-    process.chdir(originalCwd);
     await rm(tempDir, { recursive: true, force: true });
   });
 

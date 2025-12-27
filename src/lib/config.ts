@@ -19,16 +19,16 @@ async function loadConfigFile(path: string): Promise<ReposConfig | null> {
   return null;
 }
 
-export function getCwdConfigPath(): string {
-  return join(process.cwd(), CONFIG_FILENAME);
+export function getCwdConfigPath(basePath?: string): string {
+  return join(basePath ?? process.cwd(), CONFIG_FILENAME);
 }
 
 export function getHomeConfigPath(): string {
   return join(homedir(), CONFIG_FILENAME);
 }
 
-export async function loadConfig(): Promise<ReposConfig> {
-  const cwdConfig = await loadConfigFile(getCwdConfigPath());
+export async function loadConfig(basePath?: string): Promise<ReposConfig> {
+  const cwdConfig = await loadConfigFile(getCwdConfigPath(basePath));
   if (cwdConfig) return mergeConfig(DEFAULT_CONFIG, cwdConfig);
 
   const homeConfig = await loadConfigFile(getHomeConfigPath());
@@ -55,17 +55,19 @@ function mergeConfig(
 
 export async function saveConfig(
   config: ReposConfig,
-  location: "cwd" | "home" = "cwd"
+  location: "cwd" | "home" = "cwd",
+  basePath?: string
 ): Promise<void> {
-  const path = location === "cwd" ? getCwdConfigPath() : getHomeConfigPath();
+  const path = location === "cwd" ? getCwdConfigPath(basePath) : getHomeConfigPath();
   await Bun.write(path, JSON.stringify(config, null, 2) + "\n");
 }
 
 export async function configExists(
-  location: "cwd" | "home" | "any" = "any"
+  location: "cwd" | "home" | "any" = "any",
+  basePath?: string
 ): Promise<boolean> {
   if (location === "cwd" || location === "any") {
-    const cwdExists = await Bun.file(getCwdConfigPath()).exists();
+    const cwdExists = await Bun.file(getCwdConfigPath(basePath)).exists();
     if (cwdExists) return true;
   }
 

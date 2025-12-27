@@ -1,42 +1,38 @@
 import { describe, test, expect } from "bun:test";
 import React from "react";
 import { render } from "ink-testing-library";
-import { CleanupApp } from "./cleanup.js";
-import { createTempRepoDir } from "../../tests/helpers/temp-repos.js";
+import { CleanApp } from "./clean.js";
+import { createTempRepoDir, createEmptyTempDir } from "../../tests/helpers/temp-repos.js";
 import { waitFor } from "../../tests/helpers/ink-test-utils.js";
 import { writeFile } from "fs/promises";
 import { join } from "path";
 
-describe("CleanupApp", () => {
+describe("CleanApp", () => {
   describe("rendering phases", () => {
     test("shows finding phase initially", async () => {
-      const { lastFrame, unmount } = render(
-        <CleanupApp options={{}} onComplete={() => {}} />
-      );
-
-      expect(lastFrame()).toContain("Finding repositories");
-      unmount();
+      const { path, cleanup } = await createEmptyTempDir();
+      try {
+        const { lastFrame, unmount } = render(
+          <CleanApp options={{ basePath: path }} onComplete={() => {}} />
+        );
+        expect(lastFrame()).toContain("Finding repositories");
+        unmount();
+      } finally {
+        await cleanup();
+      }
     });
 
     test("shows error when no repos found", async () => {
-      const tempDir = `/tmp/empty-cleanup-${Date.now()}`;
-      const { mkdir, rm } = await import("fs/promises");
-      await mkdir(tempDir, { recursive: true });
-
-      const originalCwd = process.cwd();
-      process.chdir(tempDir);
-
+      const { path, cleanup } = await createEmptyTempDir();
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{}} onComplete={() => {}} />
+          <CleanApp options={{ basePath: path }} onComplete={() => {}} />
         );
-
         await waitFor(() => lastFrame()?.includes("No repositories") ?? false);
         expect(lastFrame()).toContain("No repositories found");
         unmount();
       } finally {
-        process.chdir(originalCwd);
-        await rm(tempDir, { recursive: true, force: true });
+        await cleanup();
       }
     });
   });
@@ -47,19 +43,15 @@ describe("CleanupApp", () => {
         { name: "clean-repo" },
       ]);
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{}} onComplete={() => {}} />
+          <CleanApp options={{ basePath }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("All repositories are already clean") ?? false, 5000);
         expect(lastFrame()).toContain("All repositories are already clean");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -73,12 +65,9 @@ describe("CleanupApp", () => {
 
       await writeFile(join(repos[0].path, "README.md"), "modified content");
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{}} onComplete={() => {}} />
+          <CleanApp options={{ basePath }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("WARNING") ?? false, 5000);
@@ -88,7 +77,6 @@ describe("CleanupApp", () => {
         expect(frame).toContain("dirty-repo");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -100,12 +88,9 @@ describe("CleanupApp", () => {
 
       await writeFile(join(basePath, "dirty-repo", "README.md"), "modified");
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{ dryRun: true }} onComplete={() => {}} />
+          <CleanApp options={{ basePath, dryRun: true }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Dry Run") ?? false, 5000);
@@ -116,7 +101,6 @@ describe("CleanupApp", () => {
         expect(frame).toContain("Would clean");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -128,12 +112,9 @@ describe("CleanupApp", () => {
 
       await writeFile(join(basePath, "dirty-repo", "README.md"), "modified");
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{ force: true }} onComplete={() => {}} />
+          <CleanApp options={{ basePath, force: true }} onComplete={() => {}} />
         );
 
         // Should skip confirmation and go to cleaning
@@ -149,7 +130,6 @@ describe("CleanupApp", () => {
         expect(frame).toBeTruthy();
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
@@ -166,12 +146,9 @@ describe("CleanupApp", () => {
         await writeFile(join(repo.path, "README.md"), "modified");
       }
 
-      const originalCwd = process.cwd();
-      process.chdir(basePath);
-
       try {
         const { lastFrame, unmount } = render(
-          <CleanupApp options={{ filter: "api-*", dryRun: true }} onComplete={() => {}} />
+          <CleanApp options={{ basePath, filter: "api-*", dryRun: true }} onComplete={() => {}} />
         );
 
         await waitFor(() => lastFrame()?.includes("Dry Run") ?? false, 5000);
@@ -181,7 +158,6 @@ describe("CleanupApp", () => {
         expect(frame).not.toContain("webapp");
         unmount();
       } finally {
-        process.chdir(originalCwd);
         await cleanup();
       }
     });
