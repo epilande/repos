@@ -9,9 +9,19 @@ import { runClone } from "./commands/clone.js";
 import { runCleanup } from "./commands/cleanup.js";
 import { runConfig } from "./commands/config.js";
 import { runInit } from "./commands/init.js";
+import { runFetch } from "./commands/fetch.js";
+import { runDiff } from "./commands/diff.js";
+import { runCheckout } from "./commands/checkout.js";
+import { runExec } from "./commands/exec.js";
 import packageJson from "../package.json";
 
 const VERSION = packageJson.version;
+
+function showDeprecationWarning(oldName: string, newName: string) {
+  console.warn(
+    `\x1b[33mWarning: 'repos ${oldName}' is deprecated. Use 'repos ${newName}' instead.\x1b[0m\n`
+  );
+}
 
 program
   .name("repos")
@@ -49,13 +59,50 @@ program
   });
 
 program
-  .command("update")
+  .command("fetch")
+  .description("Fetch latest changes from remotes for all repositories")
+  .option("-n, --dry-run", "Show what would be fetched without fetching")
+  .option("-q, --quiet", "Minimal output")
+  .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
+  .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
+  .option("--prune", "Remove remote-tracking references that no longer exist")
+  .option("-a, --all", "Fetch from all remotes")
+  .action(async (options) => {
+    await runFetch({
+      dryRun: options.dryRun,
+      quiet: options.quiet,
+      filter: options.filter,
+      parallel: options.parallel,
+      prune: options.prune,
+      all: options.all,
+    });
+  });
+
+program
+  .command("pull")
   .description("Pull latest changes for all repositories")
   .option("-n, --dry-run", "Show what would be updated without pulling")
   .option("-q, --quiet", "Minimal output")
   .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
   .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
   .action(async (options) => {
+    await runUpdate({
+      dryRun: options.dryRun,
+      quiet: options.quiet,
+      filter: options.filter,
+      parallel: options.parallel,
+    });
+  });
+
+program
+  .command("update")
+  .description("(Deprecated: use 'pull') Pull latest changes for all repositories")
+  .option("-n, --dry-run", "Show what would be updated without pulling")
+  .option("-q, --quiet", "Minimal output")
+  .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
+  .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
+  .action(async (options) => {
+    showDeprecationWarning("update", "pull");
     await runUpdate({
       dryRun: options.dryRun,
       quiet: options.quiet,
@@ -85,17 +132,78 @@ program
   });
 
 program
-  .command("cleanup")
+  .command("clean")
   .description("Clean repositories by reverting changes")
   .option("-n, --dry-run", "Show what would be cleaned without cleaning")
-  .option("-f, --force", "Skip confirmation prompt")
+  .option("--force", "Skip confirmation prompt")
   .option("-a, --all", "Also remove untracked files")
-  .option("--filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
+  .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
   .action(async (options) => {
     await runCleanup({
       dryRun: options.dryRun,
       force: options.force,
       all: options.all,
+      filter: options.filter,
+    });
+  });
+
+program
+  .command("cleanup")
+  .description("(Deprecated: use 'clean') Clean repositories by reverting changes")
+  .option("-n, --dry-run", "Show what would be cleaned without cleaning")
+  .option("-f, --force", "Skip confirmation prompt")
+  .option("-a, --all", "Also remove untracked files")
+  .option("--filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
+  .action(async (options) => {
+    showDeprecationWarning("cleanup", "clean");
+    await runCleanup({
+      dryRun: options.dryRun,
+      force: options.force,
+      all: options.all,
+      filter: options.filter,
+    });
+  });
+
+program
+  .command("diff")
+  .description("Show diffs across all repositories")
+  .option("-q, --quiet", "Only list repos with changes (no diff output)")
+  .option("--stat", "Show diffstat summary instead of full diff")
+  .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
+  .action(async (options) => {
+    await runDiff({
+      quiet: options.quiet,
+      stat: options.stat,
+      filter: options.filter,
+    });
+  });
+
+program
+  .command("checkout <branch>")
+  .description("Switch branches across all repositories")
+  .option("-b, --create", "Create branch if it doesn't exist")
+  .option("--force", "Skip repos with uncommitted changes")
+  .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
+  .action(async (branch, options) => {
+    await runCheckout({
+      branch,
+      create: options.create,
+      force: options.force,
+      filter: options.filter,
+    });
+  });
+
+program
+  .command("exec <command>")
+  .description("Run arbitrary command across all repositories")
+  .option("-q, --quiet", "Only show output for repos with non-empty results")
+  .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
+  .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
+  .action(async (command, options) => {
+    await runExec({
+      command,
+      quiet: options.quiet,
+      parallel: options.parallel,
       filter: options.filter,
     });
   });

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Box, Text, useApp, useStdout } from "ink";
-import SelectInput from "ink-select-input";
 import Spinner from "ink-spinner";
 import { StatusApp } from "../commands/status.js";
 import { UpdateApp } from "../commands/update.js";
@@ -8,38 +7,68 @@ import { CloneApp } from "../commands/clone.js";
 import { CleanupApp } from "../commands/cleanup.js";
 import { ConfigApp } from "../commands/config.js";
 import { InitApp } from "../commands/init.js";
+import { FetchApp } from "../commands/fetch.js";
+import { DiffApp } from "../commands/diff.js";
+import { CheckoutApp } from "../commands/checkout.js";
+import { ExecApp } from "../commands/exec.js";
 import { loadConfig } from "../lib/config.js";
 import { OptionsForm, type FormField } from "./OptionsForm.js";
+import { GroupedMenu, type MenuItem, type MenuGroup } from "./GroupedMenu.js";
 import type {
   ReposConfig,
   StatusOptions,
   UpdateOptions,
   CloneOptions,
   CleanupOptions,
+  FetchOptions,
+  DiffOptions,
+  CheckoutOptions,
+  ExecOptions,
 } from "../types.js";
 
 type Command =
   | "status"
-  | "update"
+  | "fetch"
+  | "pull"
+  | "diff"
+  | "checkout"
   | "clone"
-  | "cleanup"
+  | "clean"
+  | "exec"
   | "config"
   | "init"
   | "exit";
 
-interface MenuItem {
-  label: string;
-  value: Command;
-}
-
-const menuItems: MenuItem[] = [
-  { label: "Check repository status", value: "status" },
-  { label: "Update all repositories", value: "update" },
-  { label: "Clone active repositories", value: "clone" },
-  { label: "Cleanup repositories", value: "cleanup" },
-  { label: "Configure settings", value: "config" },
-  { label: "Run setup wizard", value: "init" },
-  { label: "Exit", value: "exit" },
+const menuGroups: MenuGroup[] = [
+  {
+    category: "git",
+    label: "Git Operations",
+    items: [
+      { label: "Status", value: "status" },
+      { label: "Fetch", value: "fetch" },
+      { label: "Pull", value: "pull" },
+      { label: "Diff", value: "diff" },
+      { label: "Checkout", value: "checkout" },
+    ],
+  },
+  {
+    category: "repo",
+    label: "Repository Management",
+    items: [
+      { label: "Clone from org", value: "clone" },
+      { label: "Clean", value: "clean" },
+      { label: "Exec", value: "exec" },
+    ],
+  },
+  {
+    category: "settings",
+    label: "Settings",
+    items: [
+      { label: "Configure", value: "config" },
+      { label: "Setup wizard", value: "init" },
+      { label: "Exit", value: "exit" },
+    ],
+  },
 ];
 
 function getCommandFields(
@@ -93,7 +122,47 @@ function getCommandFields(
         },
       ];
 
-    case "update":
+    case "fetch":
+      return [
+        {
+          name: "dryRun",
+          label: "Dry run",
+          type: "toggle",
+          defaultValue: false,
+          hint: "Preview what would be fetched without actually fetching",
+        },
+        {
+          name: "prune",
+          label: "Prune",
+          type: "toggle",
+          defaultValue: false,
+          hint: "Remove remote-tracking references that no longer exist",
+        },
+        {
+          name: "all",
+          label: "Fetch all remotes",
+          type: "toggle",
+          defaultValue: false,
+          hint: "Fetch from all configured remotes",
+        },
+        {
+          name: "filter",
+          label: "Filter pattern",
+          type: "text",
+          placeholder: "e.g., api-*",
+          hint: "Only fetch repos matching this pattern",
+        },
+        {
+          name: "parallel",
+          label: "Parallel jobs",
+          type: "number",
+          defaultValue: defaultParallel,
+          placeholder: `default: ${defaultParallel}`,
+          hint: "Number of concurrent fetch operations",
+        },
+      ];
+
+    case "pull":
       return [
         {
           name: "dryRun",
@@ -114,7 +183,7 @@ function getCommandFields(
           label: "Filter pattern",
           type: "text",
           placeholder: "e.g., api-*",
-          hint: "Only update repos matching this pattern",
+          hint: "Only pull repos matching this pattern",
         },
         {
           name: "parallel",
@@ -122,7 +191,97 @@ function getCommandFields(
           type: "number",
           defaultValue: defaultParallel,
           placeholder: `default: ${defaultParallel}`,
-          hint: "Number of concurrent update operations",
+          hint: "Number of concurrent pull operations",
+        },
+      ];
+
+    case "diff":
+      return [
+        {
+          name: "quiet",
+          label: "List only",
+          type: "toggle",
+          defaultValue: false,
+          hint: "Only list repos with changes (no diff output)",
+        },
+        {
+          name: "stat",
+          label: "Show stat",
+          type: "toggle",
+          defaultValue: false,
+          hint: "Show diffstat summary instead of full diff",
+        },
+        {
+          name: "filter",
+          label: "Filter pattern",
+          type: "text",
+          placeholder: "e.g., api-*",
+          hint: "Only check repos matching this pattern",
+        },
+      ];
+
+    case "checkout":
+      return [
+        {
+          name: "branch",
+          label: "Branch name",
+          type: "text",
+          placeholder: "e.g., main, develop",
+          hint: "Branch to checkout across all repos",
+        },
+        {
+          name: "create",
+          label: "Create if missing",
+          type: "toggle",
+          defaultValue: false,
+          hint: "Create branch if it doesn't exist (-b flag)",
+        },
+        {
+          name: "force",
+          label: "Skip dirty repos",
+          type: "toggle",
+          defaultValue: false,
+          hint: "Skip repos with uncommitted changes",
+        },
+        {
+          name: "filter",
+          label: "Filter pattern",
+          type: "text",
+          placeholder: "e.g., api-*",
+          hint: "Only checkout in repos matching this pattern",
+        },
+      ];
+
+    case "exec":
+      return [
+        {
+          name: "command",
+          label: "Command",
+          type: "text",
+          placeholder: "e.g., git log -1 --oneline",
+          hint: "Shell command to run in each repository",
+        },
+        {
+          name: "quiet",
+          label: "Quiet mode",
+          type: "toggle",
+          defaultValue: false,
+          hint: "Only show output for repos with non-empty results",
+        },
+        {
+          name: "filter",
+          label: "Filter pattern",
+          type: "text",
+          placeholder: "e.g., api-*",
+          hint: "Only run in repos matching this pattern",
+        },
+        {
+          name: "parallel",
+          label: "Parallel jobs",
+          type: "number",
+          defaultValue: defaultParallel,
+          placeholder: `default: ${defaultParallel}`,
+          hint: "Number of concurrent operations",
         },
       ];
 
@@ -158,7 +317,7 @@ function getCommandFields(
         },
       ];
 
-    case "cleanup":
+    case "clean":
       return [
         {
           name: "dryRun",
@@ -179,7 +338,7 @@ function getCommandFields(
           label: "Filter pattern",
           type: "text",
           placeholder: "e.g., api-*",
-          hint: "Only cleanup repos matching this pattern",
+          hint: "Only clean repos matching this pattern",
         },
       ];
 
@@ -190,20 +349,37 @@ function getCommandFields(
 
 const commandTitles: Partial<Record<Command, string>> = {
   clone: "Clone Options",
-  update: "Update Options",
+  fetch: "Fetch Options",
+  pull: "Pull Options",
+  diff: "Diff Options",
+  checkout: "Checkout Options",
+  exec: "Exec Options",
   status: "Status Options",
-  cleanup: "Cleanup Options",
+  clean: "Clean Options",
 };
 
-const commandsWithOptions: Command[] = ["clone", "update", "status", "cleanup"];
+const commandsWithOptions: Command[] = [
+  "clone",
+  "fetch",
+  "pull",
+  "diff",
+  "checkout",
+  "exec",
+  "status",
+  "clean",
+];
 
 type AppState = "menu" | "loading" | "options" | "running";
 
 type CommandOptions =
   | { command: "status"; options: StatusOptions }
-  | { command: "update"; options: UpdateOptions }
+  | { command: "fetch"; options: FetchOptions }
+  | { command: "pull"; options: UpdateOptions }
+  | { command: "diff"; options: DiffOptions }
+  | { command: "checkout"; options: CheckoutOptions }
+  | { command: "exec"; options: ExecOptions }
   | { command: "clone"; options: CloneOptions }
-  | { command: "cleanup"; options: CleanupOptions }
+  | { command: "clean"; options: CleanupOptions }
   | { command: "config" }
   | { command: "init" };
 
@@ -227,20 +403,22 @@ export function App() {
   }, [state, selectedCommand]);
 
   const handleSelect = async (item: MenuItem) => {
-    if (item.value === "exit") {
+    const command = item.value as Command;
+
+    if (command === "exit") {
       exit();
       return;
     }
 
-    if (commandsWithOptions.includes(item.value)) {
-      setSelectedCommand(item.value);
+    if (commandsWithOptions.includes(command)) {
+      setSelectedCommand(command);
       setState("loading");
       return;
     }
 
     setState("running");
 
-    switch (item.value) {
+    switch (command) {
       case "config":
         setRunningCommand({ command: "config" });
         break;
@@ -275,11 +453,59 @@ export function App() {
           },
         });
         break;
-      case "update":
+      case "fetch":
         setRunningCommand({
-          command: "update",
+          command: "fetch",
           options: {
             dryRun: values.dryRun as boolean | undefined,
+            prune: values.prune as boolean | undefined,
+            all: values.all as boolean | undefined,
+            filter: values.filter as string | undefined,
+            parallel: values.parallel as number | undefined,
+            interactive: true,
+          },
+        });
+        break;
+      case "pull":
+        setRunningCommand({
+          command: "pull",
+          options: {
+            dryRun: values.dryRun as boolean | undefined,
+            quiet: values.quiet as boolean | undefined,
+            filter: values.filter as string | undefined,
+            parallel: values.parallel as number | undefined,
+            interactive: true,
+          },
+        });
+        break;
+      case "diff":
+        setRunningCommand({
+          command: "diff",
+          options: {
+            quiet: values.quiet as boolean | undefined,
+            stat: values.stat as boolean | undefined,
+            filter: values.filter as string | undefined,
+            interactive: true,
+          },
+        });
+        break;
+      case "checkout":
+        setRunningCommand({
+          command: "checkout",
+          options: {
+            branch: values.branch as string,
+            create: values.create as boolean | undefined,
+            force: values.force as boolean | undefined,
+            filter: values.filter as string | undefined,
+            interactive: true,
+          },
+        });
+        break;
+      case "exec":
+        setRunningCommand({
+          command: "exec",
+          options: {
+            command: values.command as string,
             quiet: values.quiet as boolean | undefined,
             filter: values.filter as string | undefined,
             parallel: values.parallel as number | undefined,
@@ -300,9 +526,9 @@ export function App() {
           },
         });
         break;
-      case "cleanup":
+      case "clean":
         setRunningCommand({
-          command: "cleanup",
+          command: "clean",
           options: {
             dryRun: values.dryRun as boolean | undefined,
             all: values.all as boolean | undefined,
@@ -329,9 +555,37 @@ export function App() {
             onComplete={handleCommandComplete}
           />
         );
-      case "update":
+      case "fetch":
+        return (
+          <FetchApp
+            options={runningCommand.options}
+            onComplete={handleCommandComplete}
+          />
+        );
+      case "pull":
         return (
           <UpdateApp
+            options={runningCommand.options}
+            onComplete={handleCommandComplete}
+          />
+        );
+      case "diff":
+        return (
+          <DiffApp
+            options={runningCommand.options}
+            onComplete={handleCommandComplete}
+          />
+        );
+      case "checkout":
+        return (
+          <CheckoutApp
+            options={runningCommand.options}
+            onComplete={handleCommandComplete}
+          />
+        );
+      case "exec":
+        return (
+          <ExecApp
             options={runningCommand.options}
             onComplete={handleCommandComplete}
           />
@@ -343,7 +597,7 @@ export function App() {
             onComplete={handleCommandComplete}
           />
         );
-      case "cleanup":
+      case "clean":
         return (
           <CleanupApp
             options={runningCommand.options}
@@ -386,21 +640,24 @@ export function App() {
   if (state === "options" && selectedCommand && config) {
     const fields = getCommandFields(selectedCommand, config);
     if (fields) {
+      const submitLabels: Partial<Record<Command, string>> = {
+        clone: "Clone",
+        fetch: "Fetch",
+        pull: "Pull",
+        diff: "Diff",
+        checkout: "Checkout",
+        exec: "Exec",
+        clean: "Clean",
+        status: "Check",
+      };
+
       return (
         <OptionsForm
           title={commandTitles[selectedCommand] || "Options"}
           fields={fields}
           onSubmit={handleOptionsSubmit}
           onCancel={handleOptionsCancel}
-          submitLabel={
-            selectedCommand === "clone"
-              ? "Clone"
-              : selectedCommand === "update"
-                ? "Update"
-                : selectedCommand === "cleanup"
-                  ? "Cleanup"
-                  : "Run"
-          }
+          submitLabel={submitLabels[selectedCommand] || "Run"}
         />
       );
     }
@@ -417,7 +674,7 @@ export function App() {
       <Box marginBottom={1}>
         <Text>What would you like to do?</Text>
       </Box>
-      <SelectInput items={menuItems} onSelect={handleSelect} />
+      <GroupedMenu groups={menuGroups} onSelect={handleSelect} />
       <Box marginTop={1}>
         <Text color="gray">Use arrow keys to navigate, Enter to select</Text>
       </Box>
