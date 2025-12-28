@@ -69,6 +69,7 @@ export interface StatusOptions {
   quiet?: boolean;
   filter?: string;
   fetch?: boolean;
+  basePath?: string;
 }
 
 export interface UpdateOptions {
@@ -77,6 +78,7 @@ export interface UpdateOptions {
   filter?: string;
   quiet?: boolean;
   interactive?: boolean;
+  basePath?: string;
 }
 
 export interface CleanupOptions {
@@ -85,6 +87,46 @@ export interface CleanupOptions {
   all?: boolean;
   filter?: string;
   interactive?: boolean;
+  basePath?: string;
+}
+
+export interface FetchOptions {
+  dryRun?: boolean;
+  prune?: boolean;
+  all?: boolean;
+  parallel?: number;
+  filter?: string;
+  quiet?: boolean;
+  interactive?: boolean;
+  basePath?: string;
+}
+
+export interface DiffOptions {
+  filter?: string;
+  quiet?: boolean;
+  stat?: boolean;
+  parallel?: number;
+  interactive?: boolean;
+  basePath?: string;
+}
+
+export interface CheckoutOptions {
+  branch: string;
+  filter?: string;
+  create?: boolean;
+  force?: boolean;
+  parallel?: number;
+  interactive?: boolean;
+  basePath?: string;
+}
+
+export interface ExecOptions {
+  command: string;
+  filter?: string;
+  parallel?: number;
+  quiet?: boolean;
+  interactive?: boolean;
+  basePath?: string;
 }
 
 export interface ConfigOptions {

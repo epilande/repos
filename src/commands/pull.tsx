@@ -9,7 +9,7 @@ import { Confirm } from "../components/Confirm.js";
 import { Divider } from "../components/Divider.js";
 import type { UpdateOptions, RepoOperationResult } from "../types.js";
 
-interface UpdateAppProps {
+interface PullAppProps {
   options: UpdateOptions;
   onComplete?: () => void;
 }
@@ -128,7 +128,7 @@ function ResultsTable({
   );
 }
 
-export function UpdateApp({ options, onComplete }: UpdateAppProps) {
+export function PullApp({ options, onComplete }: PullAppProps) {
   const [phase, setPhase] = useState<Phase>("finding");
   const [repos, setRepos] = useState<string[]>([]);
   const [results, setResults] = useState<RepoOperationResult[]>([]);
@@ -191,7 +191,7 @@ export function UpdateApp({ options, onComplete }: UpdateAppProps) {
         const parallelCount = options.parallel ?? config.parallel ?? 10;
         setParallel(parallelCount);
 
-        let repoPaths = await findRepos();
+        let repoPaths = await findRepos(options.basePath);
 
         if (repoPaths.length === 0) {
           setError("No repositories found in current directory");
@@ -554,7 +554,7 @@ export function UpdateApp({ options, onComplete }: UpdateAppProps) {
   );
 }
 
-export async function runUpdate(options: UpdateOptions): Promise<void> {
-  const { waitUntilExit } = render(<UpdateApp options={options} />);
+export async function runPull(options: UpdateOptions): Promise<void> {
+  const { waitUntilExit } = render(<PullApp options={options} />);
   await waitUntilExit();
 }

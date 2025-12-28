@@ -74,7 +74,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
       try {
         setStartTime(Date.now());
 
-        let repoPaths = await findRepos();
+        let repoPaths = await findRepos(options.basePath);
 
         if (repoPaths.length === 0) {
           setError("No repositories found in current directory");
@@ -148,7 +148,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
     }
 
     loadStatus();
-  }, [options.filter, options.fetch]);
+  }, [options.filter, options.fetch, options.basePath]);
 
   useInput((input, key) => {
     if (key.escape) {

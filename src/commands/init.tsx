@@ -29,10 +29,11 @@ type Step =
 
 interface InitAppProps {
   force?: boolean;
+  basePath?: string;
   onComplete?: () => void;
 }
 
-export function InitApp({ force, onComplete }: InitAppProps) {
+export function InitApp({ force, basePath, onComplete }: InitAppProps) {
   const [step, setStep] = useState<Step>("checking");
   const [ghCliInfo, setGhCliInfo] = useState<{
     available: boolean;
@@ -64,7 +65,7 @@ export function InitApp({ force, onComplete }: InitAppProps) {
 
   useEffect(() => {
     async function check() {
-      if (!force && (await configExists("any"))) {
+      if (!force && (await configExists("any", basePath))) {
         setError(
           "Configuration already exists. Use --force to overwrite or 'repos config' to view/edit."
         );
@@ -108,12 +109,12 @@ export function InitApp({ force, onComplete }: InitAppProps) {
         parallel: 10,
       };
 
-      await saveConfig(config, saveLocation);
+      await saveConfig(config, saveLocation, basePath);
       setStep("done");
     }
 
     save();
-  }, [step, selectedHost, customHost, org, days, saveLocation]);
+  }, [step, selectedHost, customHost, org, days, saveLocation, basePath]);
 
   if (error && step === "done") {
     return (
@@ -315,7 +316,7 @@ export function InitApp({ force, onComplete }: InitAppProps) {
   if (step === "location-select") {
     const items = [
       {
-        label: `Current directory (${getCwdConfigPath()})`,
+        label: `Current directory (${getCwdConfigPath(basePath)})`,
         value: "cwd" as const,
       },
       {
@@ -370,7 +371,7 @@ export function InitApp({ force, onComplete }: InitAppProps) {
   }
 
   const configPath =
-    saveLocation === "cwd" ? getCwdConfigPath() : getHomeConfigPath();
+    saveLocation === "cwd" ? getCwdConfigPath(basePath) : getHomeConfigPath();
 
   return (
     <Box flexDirection="column">
