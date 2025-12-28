@@ -50,6 +50,7 @@ function mergeConfig(
     daysThreshold: user.daysThreshold ?? defaults.daysThreshold,
     parallel: user.parallel ?? defaults.parallel,
     timeout: user.timeout ?? defaults.timeout,
+    diffMaxLines: user.diffMaxLines ?? defaults.diffMaxLines,
   };
 }
 

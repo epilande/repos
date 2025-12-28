@@ -7,9 +7,7 @@ import { loadConfig } from "../lib/config.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { Divider } from "../components/Divider.js";
 import { DiffHighlight } from "../components/DiffHighlight.js";
-import type { DiffOptions } from "../types.js";
-
-const DEFAULT_MAX_LINES = 500;
+import { DEFAULT_CONFIG, type DiffOptions } from "../types.js";
 
 interface DiffAppProps {
   options: DiffOptions;
@@ -20,7 +18,6 @@ type Phase = "finding" | "diffing" | "cancelling" | "done" | "cancelled";
 
 function DiffOutput({ result, showStat, maxLines }: { result: DiffResult; showStat: boolean; maxLines?: number }) {
   const content = showStat ? result.stat : result.diff;
-  const effectiveMaxLines = maxLines === undefined ? DEFAULT_MAX_LINES : (maxLines === 0 ? undefined : maxLines);
 
   return (
     <Box flexDirection="column" marginBottom={1}>
@@ -28,7 +25,7 @@ function DiffOutput({ result, showStat, maxLines }: { result: DiffResult; showSt
         <Text bold color="cyan">{result.name}</Text>
       </Box>
       <Box paddingLeft={2}>
-        <DiffHighlight content={content} maxLines={effectiveMaxLines} />
+        <DiffHighlight content={content} maxLines={maxLines} />
       </Box>
     </Box>
   );
@@ -42,6 +39,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
   const [error, setError] = useState<string | null>(null);
   const [startTime] = useState(Date.now());
   const [parallel, setParallel] = useState(10);
+  const [maxLines, setMaxLines] = useState<number | undefined>(undefined);
   const cancelledRef = useRef(false);
 
   useEffect(() => {
@@ -54,8 +52,11 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
     async function runDiff() {
       try {
         const config = await loadConfig();
-        const parallelCount = options.parallel ?? config.parallel ?? 10;
+        const parallelCount = options.parallel ?? config.parallel ?? DEFAULT_CONFIG.parallel;
         setParallel(parallelCount);
+
+        const configuredMaxLines = options.maxLines ?? config.diffMaxLines ?? DEFAULT_CONFIG.diffMaxLines;
+        setMaxLines(configuredMaxLines === 0 ? undefined : configuredMaxLines);
 
         let repoPaths = await findRepos(options.basePath);
 
@@ -222,7 +223,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
       ) : (
         <Box flexDirection="column">
           {results.map(r => (
-            <DiffOutput key={r.name} result={r} showStat={options.stat ?? false} maxLines={options.maxLines} />
+            <DiffOutput key={r.name} result={r} showStat={options.stat ?? false} maxLines={maxLines} />
           ))}
         </Box>
       )}

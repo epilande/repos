@@ -203,7 +203,7 @@ describe("DiffApp", () => {
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
 
         const frame = lastFrame()!;
-        expect(frame).toContain("more lines");
+        expect(frame).toContain("showing 500 of");
         expect(frame).toContain("--stat");
         unmount();
       } finally {
@@ -227,7 +227,7 @@ describe("DiffApp", () => {
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
 
         const frame = lastFrame()!;
-        expect(frame).not.toContain("more lines");
+        expect(frame).not.toContain("showing");
         expect(frame).toContain("line 600");
         unmount();
       } finally {
@@ -251,7 +251,7 @@ describe("DiffApp", () => {
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
 
         const frame = lastFrame()!;
-        expect(frame).toContain("more lines");
+        expect(frame).toContain("showing 10 of");
         expect(frame).not.toContain("line 50");
         unmount();
       } finally {

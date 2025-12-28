@@ -10,7 +10,6 @@ export function DiffHighlight({ content, maxLines }: DiffHighlightProps) {
   const allLines = content.split("\n");
   const shouldTruncate = maxLines !== undefined && maxLines > 0 && allLines.length > maxLines;
   const lines = shouldTruncate ? allLines.slice(0, maxLines) : allLines;
-  const remainingLines = shouldTruncate ? allLines.length - maxLines : 0;
 
   return (
     <Box flexDirection="column">
@@ -24,12 +23,24 @@ export function DiffHighlight({ content, maxLines }: DiffHighlightProps) {
       })}
       {shouldTruncate && (
         <Text color="yellow">
-          ... ({remainingLines} more {remainingLines === 1 ? "line" : "lines"} - use --stat for summary)
+          ... (showing {maxLines} of {allLines.length} lines - use --stat for summary)
         </Text>
       )}
     </Box>
   );
 }
+
+const GRAY_PREFIXES = [
+  "diff --git",
+  "index ",
+  "new file",
+  "deleted file",
+  "rename from",
+  "rename to",
+  "similarity index",
+  "copy from",
+  "copy to",
+];
 
 export function getLineColor(line: string): string | undefined {
   if (line.startsWith("+++") || line.startsWith("---")) {
@@ -44,12 +55,10 @@ export function getLineColor(line: string): string | undefined {
   if (line.startsWith("@@")) {
     return "cyan";
   }
-  if (
-    line.startsWith("diff --git") ||
-    line.startsWith("index ") ||
-    line.startsWith("new file") ||
-    line.startsWith("deleted file")
-  ) {
+  if (line.startsWith("Binary files")) {
+    return "magenta";
+  }
+  if (GRAY_PREFIXES.some((prefix) => line.startsWith(prefix))) {
     return "gray";
   }
   return undefined;

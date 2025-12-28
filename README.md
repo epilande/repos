@@ -248,7 +248,8 @@ Create `.reposrc.json` in your project directory or home folder:
   "org": "my-org",
   "daysThreshold": 90,
   "parallel": 10,
-  "timeout": 30000
+  "timeout": 30000,
+  "diffMaxLines": 500
 }
 ```
 
@@ -260,6 +261,7 @@ Create `.reposrc.json` in your project directory or home folder:
 | `daysThreshold` | `90`                     | Only clone repos active within N days |
 | `parallel`      | `10`                     | Number of concurrent operations       |
 | `timeout`       | `30000`                  | Network timeout in milliseconds       |
+| `diffMaxLines`  | `500`                    | Max lines per diff (0 for unlimited)  |
 
 <details>
 <summary><strong>GitHub Enterprise Configuration</strong></summary>

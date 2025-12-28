@@ -66,6 +66,32 @@ describe("getLineColor", () => {
     test("returns gray for deleted file mode", () => {
       expect(getLineColor("deleted file mode 100644")).toBe("gray");
     });
+
+    test("returns gray for rename from", () => {
+      expect(getLineColor("rename from old-name.txt")).toBe("gray");
+    });
+
+    test("returns gray for rename to", () => {
+      expect(getLineColor("rename to new-name.txt")).toBe("gray");
+    });
+
+    test("returns gray for similarity index", () => {
+      expect(getLineColor("similarity index 95%")).toBe("gray");
+    });
+
+    test("returns gray for copy from", () => {
+      expect(getLineColor("copy from source.txt")).toBe("gray");
+    });
+
+    test("returns gray for copy to", () => {
+      expect(getLineColor("copy to dest.txt")).toBe("gray");
+    });
+  });
+
+  describe("binary files", () => {
+    test("returns magenta for binary files message", () => {
+      expect(getLineColor("Binary files a/image.png and b/image.png differ")).toBe("magenta");
+    });
   });
 
   describe("context lines", () => {
@@ -287,20 +313,12 @@ rename to new.txt`;
       expect(frame).not.toContain("line5");
     });
 
-    test("shows truncation message with correct count", () => {
+    test("shows truncation message with shown and total count", () => {
       const content = "line1\nline2\nline3\nline4\nline5";
       const { lastFrame } = render(<DiffHighlight content={content} maxLines={3} />);
       const frame = lastFrame()!;
-      expect(frame).toContain("2 more lines");
+      expect(frame).toContain("showing 3 of 5 lines");
       expect(frame).toContain("--stat");
-    });
-
-    test("shows singular 'line' for 1 remaining line", () => {
-      const content = "line1\nline2\nline3";
-      const { lastFrame } = render(<DiffHighlight content={content} maxLines={2} />);
-      const frame = lastFrame()!;
-      expect(frame).toContain("1 more line");
-      expect(frame).not.toContain("1 more lines");
     });
 
     test("truncates at maxLines=1", () => {
@@ -309,7 +327,7 @@ rename to new.txt`;
       const frame = lastFrame()!;
       expect(frame).toContain("line1");
       expect(frame).not.toContain("line2");
-      expect(frame).toContain("2 more lines");
+      expect(frame).toContain("showing 1 of 3 lines");
     });
 
     test("truncates large diff and shows count", () => {
@@ -320,7 +338,7 @@ rename to new.txt`;
       expect(frame).toContain("+line1");
       expect(frame).toContain("+line10");
       expect(frame).not.toContain("+line11");
-      expect(frame).toContain("90 more lines");
+      expect(frame).toContain("showing 10 of 100 lines");
     });
   });
 });
