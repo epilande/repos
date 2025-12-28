@@ -108,6 +108,7 @@ export interface DiffOptions {
   parallel?: number;
   interactive?: boolean;
   basePath?: string;
+  maxLines?: number;
 }
 
 export interface CheckoutOptions {

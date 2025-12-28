@@ -9,6 +9,8 @@ import { Divider } from "../components/Divider.js";
 import { DiffHighlight } from "../components/DiffHighlight.js";
 import type { DiffOptions } from "../types.js";
 
+const DEFAULT_MAX_LINES = 500;
+
 interface DiffAppProps {
   options: DiffOptions;
   onComplete?: () => void;
@@ -16,8 +18,9 @@ interface DiffAppProps {
 
 type Phase = "finding" | "diffing" | "cancelling" | "done" | "cancelled";
 
-function DiffOutput({ result, showStat }: { result: DiffResult; showStat: boolean }) {
+function DiffOutput({ result, showStat, maxLines }: { result: DiffResult; showStat: boolean; maxLines?: number }) {
   const content = showStat ? result.stat : result.diff;
+  const effectiveMaxLines = maxLines === undefined ? DEFAULT_MAX_LINES : (maxLines === 0 ? undefined : maxLines);
 
   return (
     <Box flexDirection="column" marginBottom={1}>
@@ -25,7 +28,7 @@ function DiffOutput({ result, showStat }: { result: DiffResult; showStat: boolea
         <Text bold color="cyan">{result.name}</Text>
       </Box>
       <Box paddingLeft={2}>
-        <DiffHighlight content={content} />
+        <DiffHighlight content={content} maxLines={effectiveMaxLines} />
       </Box>
     </Box>
   );
@@ -219,7 +222,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
       ) : (
         <Box flexDirection="column">
           {results.map(r => (
-            <DiffOutput key={r.name} result={r} showStat={options.stat ?? false} />
+            <DiffOutput key={r.name} result={r} showStat={options.stat ?? false} maxLines={options.maxLines} />
           ))}
         </Box>
       )}

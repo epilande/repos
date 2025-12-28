@@ -238,4 +238,89 @@ rename to new.txt`;
       expect(frame).toContain("+line2");
     });
   });
+
+  describe("maxLines truncation", () => {
+    test("does not truncate when maxLines is undefined", () => {
+      const content = "line1\nline2\nline3\nline4\nline5";
+      const { lastFrame } = render(<DiffHighlight content={content} />);
+      const frame = lastFrame()!;
+      expect(frame).toContain("line1");
+      expect(frame).toContain("line5");
+      expect(frame).not.toContain("more lines");
+    });
+
+    test("does not truncate when maxLines is 0", () => {
+      const content = "line1\nline2\nline3\nline4\nline5";
+      const { lastFrame } = render(<DiffHighlight content={content} maxLines={0} />);
+      const frame = lastFrame()!;
+      expect(frame).toContain("line1");
+      expect(frame).toContain("line5");
+      expect(frame).not.toContain("more lines");
+    });
+
+    test("does not truncate when content is within limit", () => {
+      const content = "line1\nline2\nline3";
+      const { lastFrame } = render(<DiffHighlight content={content} maxLines={5} />);
+      const frame = lastFrame()!;
+      expect(frame).toContain("line1");
+      expect(frame).toContain("line3");
+      expect(frame).not.toContain("more lines");
+    });
+
+    test("does not truncate when content equals limit", () => {
+      const content = "line1\nline2\nline3";
+      const { lastFrame } = render(<DiffHighlight content={content} maxLines={3} />);
+      const frame = lastFrame()!;
+      expect(frame).toContain("line1");
+      expect(frame).toContain("line3");
+      expect(frame).not.toContain("more lines");
+    });
+
+    test("truncates when content exceeds limit", () => {
+      const content = "line1\nline2\nline3\nline4\nline5";
+      const { lastFrame } = render(<DiffHighlight content={content} maxLines={3} />);
+      const frame = lastFrame()!;
+      expect(frame).toContain("line1");
+      expect(frame).toContain("line2");
+      expect(frame).toContain("line3");
+      expect(frame).not.toContain("line4");
+      expect(frame).not.toContain("line5");
+    });
+
+    test("shows truncation message with correct count", () => {
+      const content = "line1\nline2\nline3\nline4\nline5";
+      const { lastFrame } = render(<DiffHighlight content={content} maxLines={3} />);
+      const frame = lastFrame()!;
+      expect(frame).toContain("2 more lines");
+      expect(frame).toContain("--stat");
+    });
+
+    test("shows singular 'line' for 1 remaining line", () => {
+      const content = "line1\nline2\nline3";
+      const { lastFrame } = render(<DiffHighlight content={content} maxLines={2} />);
+      const frame = lastFrame()!;
+      expect(frame).toContain("1 more line");
+      expect(frame).not.toContain("1 more lines");
+    });
+
+    test("truncates at maxLines=1", () => {
+      const content = "line1\nline2\nline3";
+      const { lastFrame } = render(<DiffHighlight content={content} maxLines={1} />);
+      const frame = lastFrame()!;
+      expect(frame).toContain("line1");
+      expect(frame).not.toContain("line2");
+      expect(frame).toContain("2 more lines");
+    });
+
+    test("truncates large diff and shows count", () => {
+      const lines = Array.from({ length: 100 }, (_, i) => `+line${i + 1}`);
+      const content = lines.join("\n");
+      const { lastFrame } = render(<DiffHighlight content={content} maxLines={10} />);
+      const frame = lastFrame()!;
+      expect(frame).toContain("+line1");
+      expect(frame).toContain("+line10");
+      expect(frame).not.toContain("+line11");
+      expect(frame).toContain("90 more lines");
+    });
+  });
 });

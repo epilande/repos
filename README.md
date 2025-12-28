@@ -177,7 +177,9 @@ repos clone --dry-run              # Preview what would be cloned
 ### Diff Command
 
 ```sh
-repos diff                   # Show diffs across all repos
+repos diff                   # Show diffs (default: 500 lines per repo)
+repos diff --max-lines 100   # Limit output to 100 lines per repo
+repos diff --max-lines 0     # Show full diff (no limit)
 repos diff --stat            # Show diffstat summary
 repos diff --quiet           # Only list repos with changes
 repos diff --parallel 5      # Limit concurrent operations

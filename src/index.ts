@@ -171,12 +171,14 @@ program
   .option("--stat", "Show diffstat summary instead of full diff")
   .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
   .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
+  .option("-m, --max-lines <number>", "Max lines per diff (default: 500, 0 for unlimited)", parseInt)
   .action(async (options) => {
     await runDiff({
       quiet: options.quiet,
       stat: options.stat,
       filter: options.filter,
       parallel: options.parallel,
+      maxLines: options.maxLines,
     });
   });
 
