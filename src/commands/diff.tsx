@@ -6,6 +6,7 @@ import { diffRepo, type DiffResult } from "../lib/git.js";
 import { loadConfig } from "../lib/config.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { Divider } from "../components/Divider.js";
+import { DiffHighlight } from "../components/DiffHighlight.js";
 import type { DiffOptions } from "../types.js";
 
 interface DiffAppProps {
@@ -24,7 +25,7 @@ function DiffOutput({ result, showStat }: { result: DiffResult; showStat: boolea
         <Text bold color="cyan">{result.name}</Text>
       </Box>
       <Box paddingLeft={2}>
-        <Text>{content}</Text>
+        <DiffHighlight content={content} />
       </Box>
     </Box>
   );
