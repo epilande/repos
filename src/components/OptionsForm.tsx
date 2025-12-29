@@ -11,6 +11,7 @@ export interface FormField {
   defaultValue?: boolean | string | number;
   placeholder?: string;
   hint?: string;
+  required?: boolean;
 }
 
 interface OptionsFormProps {
@@ -40,10 +41,24 @@ export function OptionsForm({
   const totalItems = fields.length;
 
   const [isEditing, setIsEditing] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const validateRequired = useCallback((): string | null => {
+    for (const field of fields) {
+      if (field.required) {
+        const val = values[field.name];
+        if (val === undefined || val === "" || val === null) {
+          return `${field.label} is required`;
+        }
+      }
+    }
+    return null;
+  }, [fields, values]);
 
   const currentField = fields[focusIndex] ?? null;
 
   const handleToggle = useCallback((fieldName: string) => {
+    setValidationError(null);
     setValues((prev) => ({
       ...prev,
       [fieldName]: !prev[fieldName],
@@ -51,6 +66,7 @@ export function OptionsForm({
   }, []);
 
   const handleTextChange = useCallback((fieldName: string, value: string) => {
+    setValidationError(null);
     setValues((prev) => ({
       ...prev,
       [fieldName]: value,
@@ -58,6 +74,7 @@ export function OptionsForm({
   }, []);
 
   const handleNumberChange = useCallback((fieldName: string, value: string) => {
+    setValidationError(null);
     const num = value === "" ? undefined : parseInt(value, 10);
     setValues((prev) => ({
       ...prev,
@@ -66,6 +83,12 @@ export function OptionsForm({
   }, []);
 
   const doSubmit = useCallback(() => {
+    const error = validateRequired();
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+
     const finalValues: Record<string, boolean | string | number | undefined> = {};
     for (const field of fields) {
       const val = values[field.name];
@@ -79,7 +102,7 @@ export function OptionsForm({
       }
     }
     onSubmit(finalValues);
-  }, [fields, values, onSubmit]);
+  }, [fields, values, onSubmit, validateRequired]);
 
   useInput((input, key) => {
     if (!isEditing) {
@@ -142,23 +165,14 @@ export function OptionsForm({
     if (field.type === "toggle") {
       const isChecked = Boolean(value);
       return (
-        <Box key={field.name} flexDirection="column">
-          <Box>
-            <Text color={isFocused ? "cyan" : undefined}>
-              {isFocused ? "❯ " : "  "}
-            </Text>
-            <Text color={isFocused ? "cyan" : undefined}>
-              [{isChecked ? "✓" : " "}]
-            </Text>
-            <Text color={isFocused ? "white" : "gray"}> {field.label}</Text>
-          </Box>
-          {field.hint && isFocused && (
-            <Box marginLeft={6}>
-              <Text dimColor italic>
-                {field.hint}
-              </Text>
-            </Box>
-          )}
+        <Box key={field.name}>
+          <Text color={isFocused ? "cyan" : undefined}>
+            {isFocused ? "❯ " : "  "}
+          </Text>
+          <Text color={isFocused ? "cyan" : undefined}>
+            [{isChecked ? "✓" : " "}]
+          </Text>
+          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}> {field.label}</Text>
         </Box>
       );
     }
@@ -172,7 +186,9 @@ export function OptionsForm({
           <Text color={isFocused ? "cyan" : undefined}>
             {isFocused ? "❯ " : "  "}
           </Text>
-          <Text color={isFocused ? "white" : "gray"}>{field.label}: </Text>
+          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}>{field.label}</Text>
+          {field.required && <Text color="red">*</Text>}
+          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}>: </Text>
           {isEditingThis ? (
             <TextInput
               value={displayValue}
@@ -187,18 +203,11 @@ export function OptionsForm({
               placeholder={field.placeholder}
             />
           ) : (
-            <Text color={displayValue ? "green" : "gray"}>
+            <Text color={displayValue ? "green" : undefined} dimColor={!displayValue}>
               {displayValue || field.placeholder || "(empty)"}
             </Text>
           )}
         </Box>
-        {field.hint && isFocused && (
-          <Box marginLeft={2}>
-            <Text dimColor italic>
-              {field.hint}
-            </Text>
-          </Box>
-        )}
         {isFocused && !isEditing && (field.type === "text" || field.type === "number") && (
           <Box marginLeft={2}>
             <Text dimColor>Space to edit</Text>
@@ -208,6 +217,8 @@ export function OptionsForm({
     );
   };
 
+  const currentHint = currentField?.hint;
+
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
@@ -216,20 +227,24 @@ export function OptionsForm({
         </Text>
       </Box>
 
-      <Box marginBottom={1}>
-        <Text color="gray">{"─".repeat(40)}</Text>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
+      <Box flexDirection="column">
         {fields.map((field, index) => renderField(field, index))}
       </Box>
 
-      <Box marginBottom={1}>
-        <Text color="gray">{"─".repeat(40)}</Text>
-      </Box>
+      {currentHint && (
+        <Box marginTop={1}>
+          <Text dimColor>{currentHint}</Text>
+        </Box>
+      )}
 
-      <Box flexDirection="column">
-        <Text color="gray">
+      {validationError && (
+        <Box marginTop={1}>
+          <Text color="red">✗ {validationError}</Text>
+        </Box>
+      )}
+
+      <Box marginTop={1}>
+        <Text dimColor>
           ↑↓/jk Navigate • Space Toggle/Edit • Enter {submitLabel} •{" "}
           {isEditing ? "Esc Done" : "⌫/Esc Back"}
         </Text>

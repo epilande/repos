@@ -25,7 +25,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
 
   useInput(
     (input, key) => {
-      if (key.escape && isDone) {
+      if ((key.escape || key.delete) && isDone) {
         onComplete?.();
       }
     },
@@ -95,11 +95,11 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -108,14 +108,14 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
 
   if (message) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="green">{message}</Text>
         {configPath && (
-          <Text color="gray">Config file: {configPath}</Text>
+          <Text dimColor>Config file: {configPath}</Text>
         )}
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -124,21 +124,21 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
 
   if (!config) {
     return (
-      <Box>
-        <Text color="gray">Loading configuration...</Text>
+      <Box padding={1}>
+        <Text dimColor>Loading configuration...</Text>
       </Box>
     );
   }
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Text bold color="cyan">
         Current Configuration
       </Text>
       {configPath ? (
-        <Text color="gray">File: {configPath}</Text>
+        <Text dimColor>File: {configPath}</Text>
       ) : (
-        <Text color="gray">Using defaults (no config file found)</Text>
+        <Text dimColor>Using defaults (no config file found)</Text>
       )}
       <Box marginTop={1} flexDirection="column">
         <ConfigValue label="github.host" value={config.github?.host} />
@@ -149,13 +149,13 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
         <ConfigValue label="timeout" value={config.timeout} />
       </Box>
       <Box marginTop={1}>
-        <Text color="gray">
+        <Text dimColor>
           Use 'repos config --set KEY VALUE' to change a value
         </Text>
       </Box>
       {onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Escape to return to menu</Text>
+          <Text dimColor>⌫/Esc Back</Text>
         </Box>
       )}
     </Box>
@@ -170,7 +170,7 @@ interface ConfigValueProps {
 function ConfigValue({ label, value }: ConfigValueProps) {
   const displayValue =
     value === undefined || value === "" ? (
-      <Text color="gray">(not set)</Text>
+      <Text dimColor>(not set)</Text>
     ) : (
       <Text color="green">{String(value)}</Text>
     );

@@ -162,16 +162,18 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
       } else if ((phase === "done" || phase === "cancelled") && onComplete) {
         onComplete();
       }
+    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
+      onComplete();
     }
   });
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -180,7 +182,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -193,11 +195,11 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 
   if (phase === "done" && dirtyRepos.length === 0 && results.length === 0) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="green">✓ All repositories are already clean!</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -225,7 +227,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
             return (
               <Text key={repo.path}>
                 <Text color="yellow">•</Text> {repo.name}{" "}
-                <Text color="gray">({changes.join(", ")})</Text>
+                <Text dimColor>({changes.join(", ")})</Text>
               </Text>
             );
           })}
@@ -236,7 +238,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 
   if (phase === "confirmLiveRun") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         {renderDryRunPreview()}
         <Box marginTop={1}>
           <Confirm
@@ -253,10 +255,10 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 
   if (isDryRun && phase === "done") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         {renderDryRunPreview()}
         <Box marginTop={1}>
-          <Text color="gray">
+          <Text dimColor>
             Run without --dry-run to actually clean these repositories.
           </Text>
         </Box>
@@ -273,7 +275,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
     );
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="red">
             ⚠ WARNING: Destructive Operation
@@ -287,7 +289,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
         <Box marginY={1} paddingLeft={2}>
           <RepoList repos={repoNames} maxShow={10} />
         </Box>
-        <Text color="gray">
+        <Text dimColor>
           Total files affected: ~{totalChanges}
         </Text>
         <Box marginTop={1}>
@@ -307,7 +309,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
   const duration = Math.round((Date.now() - startTime) / 1000);
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           Cleaning Repositories
@@ -334,7 +336,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
             </Box>
           ) : (
             <Box marginTop={1}>
-              <Text color="gray">Press Escape to cancel</Text>
+              <Text dimColor>Esc Cancel</Text>
             </Box>
           )}
         </>
@@ -366,7 +368,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
           )}
           {onComplete && (
             <Box marginTop={1}>
-              <Text color="gray">Press Escape to return to menu</Text>
+              <Text dimColor>⌫/Esc Back</Text>
             </Box>
           )}
         </>

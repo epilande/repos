@@ -48,10 +48,10 @@ function ResultRow({ result }: { result: RepoOperationResult }) {
         </Text>
       </Box>
       {result.details && (
-        <Text color="gray">{result.details}</Text>
+        <Text dimColor>{result.details}</Text>
       )}
       {result.error && (
-        <Text color="gray">({result.error})</Text>
+        <Text dimColor>({result.error})</Text>
       )}
     </Box>
   );
@@ -178,16 +178,18 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
       } else if ((phase === "done" || phase === "cancelled") && onComplete) {
         onComplete();
       }
+    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
+      onComplete();
     }
   });
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -196,7 +198,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -211,12 +213,12 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
 
   if (phase === "checking" || phase === "cancelling") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">
             Checkout Branch: {options.branch}
           </Text>
-          <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
+          <Text dimColor> • {repos.length} repos • parallel: {parallel}</Text>
         </Box>
 
         <Box marginBottom={1}>
@@ -238,7 +240,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
           </Box>
         ) : (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to cancel</Text>
+            <Text dimColor>Esc Cancel</Text>
           </Box>
         )}
       </Box>
@@ -252,13 +254,13 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
   const errors = results.filter(r => !r.success && r.message !== "skipped" && r.message !== "not found").length;
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           Checkout Branch: {options.branch}
         </Text>
-        <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
-        {options.create && <Text color="gray"> • create if missing</Text>}
+        <Text dimColor> • {repos.length} repos • parallel: {parallel}</Text>
+        {options.create && <Text dimColor> • create if missing</Text>}
       </Box>
 
       <Box flexDirection="column" marginBottom={1}>
@@ -327,9 +329,9 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
           )}
           <Box>
             <Box width={25}>
-              <Text color="gray">Duration:</Text>
+              <Text dimColor>Duration:</Text>
             </Box>
-            <Text color="gray">{duration}s</Text>
+            <Text dimColor>{duration}s</Text>
           </Box>
         </Box>
       </Box>
@@ -352,7 +354,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
 
       {(phase === "done" || phase === "cancelled") && onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Escape to return to menu</Text>
+          <Text dimColor>⌫/Esc Back</Text>
         </Box>
       )}
     </Box>

@@ -29,7 +29,7 @@ function ResultOutput({ result, quiet }: { result: ExecResult; quiet: boolean })
         <Text color={statusColor}>{statusIcon} </Text>
         <Text bold color="cyan">{result.name}</Text>
         {result.exitCode !== 0 && (
-          <Text color="gray"> (exit code: {result.exitCode})</Text>
+          <Text dimColor> (exit code: {result.exitCode})</Text>
         )}
       </Box>
       {result.output && (
@@ -60,6 +60,12 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
   useEffect(() => {
     async function runExec() {
       try {
+        if (!options.command) {
+          setError("No command specified");
+          setPhase("done");
+          return;
+        }
+
         const config = await loadConfig();
         const parallelCount = options.parallel ?? config.parallel ?? 10;
         setParallel(parallelCount);
@@ -132,16 +138,18 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
       } else if ((phase === "done" || phase === "cancelled") && onComplete) {
         onComplete();
       }
+    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
+      onComplete();
     }
   });
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -150,7 +158,7 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -166,17 +174,19 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
   const withOutput = results.filter(r => r.output).length;
   const duration = Math.round((Date.now() - startTime) / 1000);
 
-  const displayCmd = options.command.length > 40
-    ? options.command.slice(0, 37) + "..."
-    : options.command;
+  const displayCmd = options.command
+    ? (options.command.length > 40
+        ? options.command.slice(0, 37) + "..."
+        : options.command)
+    : "(no command)";
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           Exec: {displayCmd}
         </Text>
-        <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
+        <Text dimColor> • {repos.length} repos • parallel: {parallel}</Text>
       </Box>
 
       {(phase === "executing" || phase === "cancelling") && (
@@ -199,7 +209,7 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
             </Box>
           ) : (
             <Box marginTop={1}>
-              <Text color="gray">Press Escape to cancel</Text>
+              <Text dimColor>Esc Cancel</Text>
             </Box>
           )}
         </>
@@ -243,9 +253,9 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
             {options.quiet && (
               <Box>
                 <Box width={25}>
-                  <Text color="gray">With output:</Text>
+                  <Text dimColor>With output:</Text>
                 </Box>
-                <Text color="gray">{withOutput}</Text>
+                <Text dimColor>{withOutput}</Text>
               </Box>
             )}
             {phase === "cancelled" && repos.length - results.length > 0 && (
@@ -258,9 +268,9 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
             )}
             <Box>
               <Box width={25}>
-                <Text color="gray">Duration:</Text>
+                <Text dimColor>Duration:</Text>
               </Box>
-              <Text color="gray">{duration}s</Text>
+              <Text dimColor>{duration}s</Text>
             </Box>
           </Box>
         </Box>
@@ -276,7 +286,7 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
 
       {(phase === "done" || phase === "cancelled") && onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Escape to return to menu</Text>
+          <Text dimColor>⌫/Esc Back</Text>
         </Box>
       )}
     </Box>

@@ -1,6 +1,6 @@
-import React from "react";
 import { Box, Text } from "ink";
 import type { RepoStatus } from "../types.js";
+import { Divider } from "./Divider.js";
 
 interface StatusTableProps {
   repos: RepoStatus[];
@@ -17,11 +17,15 @@ function formatSync(status: RepoStatus): string {
   return parts.join(" ");
 }
 
-function getSyncColor(status: RepoStatus): string {
-  if (!status.hasUpstream) return "gray";
+function getSyncColor(status: RepoStatus): string | undefined {
+  if (!status.hasUpstream) return undefined;
   if (status.ahead === 0 && status.behind === 0) return "green";
   if (status.behind > 0) return "yellow";
   return "cyan";
+}
+
+function shouldDimSync(status: RepoStatus): boolean {
+  return !status.hasUpstream;
 }
 
 function TableHeader() {
@@ -71,22 +75,22 @@ function TableRow({ status }: { status: RepoStatus }) {
         </Text>
       </Box>
       <Box width={10}>
-        <Text color={status.modified > 0 ? "yellow" : "gray"}>
+        <Text color={status.modified > 0 ? "yellow" : undefined} dimColor={status.modified === 0}>
           {status.modified}
         </Text>
       </Box>
       <Box width={8}>
-        <Text color={status.staged > 0 ? "green" : "gray"}>
+        <Text color={status.staged > 0 ? "green" : undefined} dimColor={status.staged === 0}>
           {status.staged}
         </Text>
       </Box>
       <Box width={11}>
-        <Text color={status.untracked > 0 ? "blue" : "gray"}>
+        <Text color={status.untracked > 0 ? "blue" : undefined} dimColor={status.untracked === 0}>
           {status.untracked}
         </Text>
       </Box>
       <Box width={8}>
-        <Text color={getSyncColor(status)}>{formatSync(status)}</Text>
+        <Text color={getSyncColor(status)} dimColor={shouldDimSync(status)}>{formatSync(status)}</Text>
       </Box>
     </Box>
   );
@@ -108,9 +112,7 @@ export function StatusTable({ repos, showClean = true }: StatusTableProps) {
   return (
     <Box flexDirection="column">
       <TableHeader />
-      <Box marginY={1}>
-        <Text color="gray">{"─".repeat(77)}</Text>
-      </Box>
+      <Divider width={77} marginBottom={1} />
       {filteredRepos.map((status) => (
         <TableRow key={status.path} status={status} />
       ))}
@@ -132,8 +134,8 @@ export function StatusSummary({ repos }: SummaryProps) {
   const behind = repos.filter((r) => r.behind > 0).length;
 
   return (
-    <Box flexDirection="column" marginTop={1}>
-      <Text color="gray">{"─".repeat(40)}</Text>
+    <Box flexDirection="column">
+      <Divider width={40} />
       <Box marginTop={1} flexDirection="column">
         <Text>
           <Text bold>Total:</Text> {repos.length} repositories
@@ -145,7 +147,7 @@ export function StatusSummary({ repos }: SummaryProps) {
         </Text>
         {dirty > 0 && (
           <Box paddingLeft={2} flexDirection="column">
-            <Text color="gray">
+            <Text dimColor>
               Modified: {modified} | Staged: {staged} | Untracked: {untracked}
             </Text>
           </Box>

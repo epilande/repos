@@ -25,7 +25,7 @@ function ErrorRow({ result }: { result: RepoOperationResult }) {
         <Text color="red">error</Text>
       </Box>
       {result.error && (
-        <Text color="gray">({result.error})</Text>
+        <Text dimColor>({result.error})</Text>
       )}
     </Box>
   );
@@ -47,7 +47,7 @@ function ErrorsTable({
         <ErrorRow key={r.name} result={r} />
       ))}
       {errors.length > maxShow && (
-        <Text color="gray">  ... and {errors.length - maxShow} more</Text>
+        <Text dimColor>  ... and {errors.length - maxShow} more</Text>
       )}
     </Box>
   );
@@ -158,6 +158,8 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
       } else if ((phase === "done" || phase === "cancelled") && onComplete) {
         onComplete();
       }
+    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
+      onComplete();
     }
   });
 
@@ -172,7 +174,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -185,10 +187,10 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
   if (phase === "fetching" || phase === "checking" || phase === "cancelling") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">{phaseLabel}</Text>
-          <Text color="gray"> · {repoCount} repos · parallel: {parallel}</Text>
+          <Text dimColor> · {repoCount} repos · parallel: {parallel}</Text>
         </Box>
 
         <Box marginBottom={1}>
@@ -210,7 +212,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
           </Box>
         ) : (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to cancel</Text>
+            <Text dimColor>Esc Cancel</Text>
           </Box>
         )}
 
@@ -227,12 +229,12 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
   if (phase === "cancelled") {
     const cleanRepos = repos.filter(r => r.isClean && r.ahead === 0 && r.behind === 0);
     const dirtyRepos = repos.filter(r => !r.isClean || r.ahead > 0 || r.behind > 0);
-    
+
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">Repository Status</Text>
-          <Text color="gray"> · {repoCount} repos · parallel: {parallel}</Text>
+          <Text dimColor> · {repoCount} repos · parallel: {parallel}</Text>
         </Box>
 
         {fetchErrors.length > 0 && (
@@ -241,7 +243,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
         {repos.length > 0 && (
           <Box flexDirection="column" marginTop={1}>
-            <Text color="gray">Partial results:</Text>
+            <Text dimColor>Partial results:</Text>
             <Box marginTop={1}>
               <StatusTable repos={repos} showClean={!options.quiet} />
             </Box>
@@ -260,7 +262,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
             <SummaryRow label="Fetch errors" value={fetchErrors.length} color="red" />
           )}
           <SummaryRow label="Not processed" value={repoCount - repos.length} color="yellow" />
-          <SummaryRow label="Duration" value={`${duration}s`} color="gray" />
+          <SummaryRow label="Duration" value={`${duration}s`} dimColor />
         </Summary>
 
         <Box marginTop={1}>
@@ -276,7 +278,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         <ReturnHint visible={!!onComplete} />
       </Box>
@@ -291,10 +293,10 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
   if (options.quiet) {
     if (dirtyRepos.length === 0) {
       return (
-        <Box flexDirection="column">
+        <Box flexDirection="column" padding={1}>
           <Box marginBottom={1}>
             <Text bold color="cyan">Repository Status</Text>
-            <Text color="gray"> · {repos.length} repos · parallel: {parallel}</Text>
+            <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
           </Box>
           
           <Text color="green">✓ All {repos.length} repositories are clean</Text>
@@ -302,7 +304,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
           <Summary>
             <SummaryRow label="Repositories checked" value={repos.length} />
             <SummaryRow label="Clean" value={repos.length} color="green" />
-            <SummaryRow label="Duration" value={`${duration}s`} color="gray" />
+            <SummaryRow label="Duration" value={`${duration}s`} dimColor />
           </Summary>
 
           <ReturnHint visible={!!onComplete} />
@@ -311,16 +313,16 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
     }
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">Repository Status</Text>
-          <Text color="gray"> · {repos.length} repos · parallel: {parallel}</Text>
+          <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
         </Box>
-        
+
         {fetchErrors.length > 0 && (
           <ErrorsTable errors={fetchErrors} maxShow={10} />
         )}
-        
+
         <StatusTable repos={dirtyRepos} showClean={false} />
 
         <Summary>
@@ -332,7 +334,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
           {fetchErrors.length > 0 && (
             <SummaryRow label="Fetch errors" value={fetchErrors.length} color="red" />
           )}
-          <SummaryRow label="Duration" value={`${duration}s`} color="gray" />
+          <SummaryRow label="Duration" value={`${duration}s`} dimColor />
         </Summary>
 
         <ReturnHint visible={!!onComplete} />
@@ -342,10 +344,10 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
   if (options.summary) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">Repository Status Summary</Text>
-          <Text color="gray"> · {repos.length} repos · parallel: {parallel}</Text>
+          <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
         </Box>
         
         <StatusSummary repos={repos} />
@@ -365,7 +367,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
           {fetchErrors.length > 0 && (
             <SummaryRow label="Fetch errors" value={fetchErrors.length} color="red" />
           )}
-          <SummaryRow label="Duration" value={`${duration}s`} color="gray" />
+          <SummaryRow label="Duration" value={`${duration}s`} dimColor />
         </Summary>
 
         <ReturnHint visible={!!onComplete} />
@@ -374,16 +376,16 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
   }
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">Repository Status</Text>
-        <Text color="gray"> · {repos.length} repos · parallel: {parallel}</Text>
+        <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
       </Box>
-      
+
       {fetchErrors.length > 0 && (
         <ErrorsTable errors={fetchErrors} maxShow={10} />
       )}
-      
+
       <Box marginTop={1}>
         <StatusTable repos={repos} showClean={true} />
       </Box>
@@ -403,7 +405,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
         {fetchErrors.length > 0 && (
           <SummaryRow label="Fetch errors" value={fetchErrors.length} color="red" />
         )}
-        <SummaryRow label="Duration" value={`${duration}s`} color="gray" />
+        <SummaryRow label="Duration" value={`${duration}s`} dimColor />
       </Summary>
 
       <ReturnHint visible={!!onComplete} />

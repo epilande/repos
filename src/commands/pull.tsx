@@ -46,10 +46,10 @@ function ResultRow({ result }: { result: RepoOperationResult }) {
         </Text>
       </Box>
       {result.details && (
-        <Text color="gray">({result.details})</Text>
+        <Text dimColor>({result.details})</Text>
       )}
       {result.error && (
-        <Text color="gray">({result.error})</Text>
+        <Text dimColor>({result.error})</Text>
       )}
     </Box>
   );
@@ -79,7 +79,7 @@ function ResultsTable({
             <ResultRow key={r.name} result={r} />
           ))}
           {updated.length > maxShow && (
-            <Text color="gray">  ... and {updated.length - maxShow} more</Text>
+            <Text dimColor>  ... and {updated.length - maxShow} more</Text>
           )}
         </Box>
       )}
@@ -94,7 +94,7 @@ function ResultsTable({
             <ResultRow key={r.name} result={r} />
           ))}
           {showAll && upToDate.length > 20 && (
-            <Text color="gray">  ... and {upToDate.length - 20} more</Text>
+            <Text dimColor>  ... and {upToDate.length - 20} more</Text>
           )}
         </Box>
       )}
@@ -107,7 +107,7 @@ function ResultsTable({
             <ResultRow key={r.name} result={r} />
           ))}
           {skipped.length > maxShow && (
-            <Text color="gray">  ... and {skipped.length - maxShow} more</Text>
+            <Text dimColor>  ... and {skipped.length - maxShow} more</Text>
           )}
         </Box>
       )}
@@ -120,7 +120,7 @@ function ResultsTable({
             <ResultRow key={r.name} result={r} />
           ))}
           {errors.length > maxShow && (
-            <Text color="gray">  ... and {errors.length - maxShow} more</Text>
+            <Text dimColor>  ... and {errors.length - maxShow} more</Text>
           )}
         </Box>
       )}
@@ -339,16 +339,18 @@ export function PullApp({ options, onComplete }: PullAppProps) {
       } else if ((phase === "done" || phase === "cancelled") && onComplete) {
         onComplete();
       }
+    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
+      onComplete();
     }
   });
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -357,7 +359,7 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -377,12 +379,12 @@ export function PullApp({ options, onComplete }: PullAppProps) {
   const showingDryRunResults = isDryRun || phase === "confirmLiveRun";
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           {showingDryRunResults ? "Update Check (Dry Run)" : "Updating Repositories"}
         </Text>
-        <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
+        <Text dimColor> • {repos.length} repos • parallel: {parallel}</Text>
       </Box>
 
       {(phase === "updating" || phase === "cancelling") && (
@@ -405,7 +407,7 @@ export function PullApp({ options, onComplete }: PullAppProps) {
             </Box>
           ) : (
             <Box marginTop={1}>
-              <Text color="gray">Press Escape to cancel</Text>
+              <Text dimColor>Esc Cancel</Text>
             </Box>
           )}
         </>
@@ -423,8 +425,8 @@ export function PullApp({ options, onComplete }: PullAppProps) {
       )}
 
       {phase === "confirmLiveRun" && (
-        <Box flexDirection="column" marginTop={1}>
-          <Text color="gray">{"─".repeat(50)}</Text>
+        <Box flexDirection="column">
+          <Divider width={50} />
           <Box marginTop={1} flexDirection="column">
             <Text bold>Summary:</Text>
             <Box>
@@ -469,8 +471,8 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 
       {/* Summary */}
       {(phase === "done" || phase === "cancelled") && (
-        <Box flexDirection="column" marginTop={1}>
-          <Text color="gray">{"─".repeat(50)}</Text>
+        <Box flexDirection="column">
+          <Divider width={50} />
           <Box marginTop={1} flexDirection="column">
             <Text bold>{phase === "cancelled" ? "Cancelled" : "Summary"}:</Text>
             <Box>
@@ -519,9 +521,9 @@ export function PullApp({ options, onComplete }: PullAppProps) {
             )}
             <Box>
               <Box width={25}>
-                <Text color="gray">Duration:</Text>
+                <Text dimColor>Duration:</Text>
               </Box>
-              <Text color="gray">{duration}s</Text>
+              <Text dimColor>{duration}s</Text>
             </Box>
           </Box>
         </Box>
@@ -547,7 +549,7 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 
       {(phase === "done" || phase === "cancelled") && onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Escape to return to menu</Text>
+          <Text dimColor>⌫/Esc Back</Text>
         </Box>
       )}
     </Box>

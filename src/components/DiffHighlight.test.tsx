@@ -1,120 +1,120 @@
 import { describe, test, expect } from "bun:test";
 import React from "react";
 import { render } from "ink-testing-library";
-import { DiffHighlight, getLineColor } from "./DiffHighlight.js";
+import { DiffHighlight, getLineStyle } from "./DiffHighlight.js";
 
-describe("getLineColor", () => {
+describe("getLineStyle", () => {
   describe("addition lines", () => {
     test("returns green for lines starting with +", () => {
-      expect(getLineColor("+added line")).toBe("green");
+      expect(getLineStyle("+added line")).toEqual({ color: "green" });
     });
 
     test("returns green for single +", () => {
-      expect(getLineColor("+")).toBe("green");
+      expect(getLineStyle("+")).toEqual({ color: "green" });
     });
 
     test("returns green for + with spaces", () => {
-      expect(getLineColor("+  indented")).toBe("green");
+      expect(getLineStyle("+  indented")).toEqual({ color: "green" });
     });
   });
 
   describe("deletion lines", () => {
     test("returns red for lines starting with -", () => {
-      expect(getLineColor("-removed line")).toBe("red");
+      expect(getLineStyle("-removed line")).toEqual({ color: "red" });
     });
 
     test("returns red for single -", () => {
-      expect(getLineColor("-")).toBe("red");
+      expect(getLineStyle("-")).toEqual({ color: "red" });
     });
 
     test("returns red for - with spaces", () => {
-      expect(getLineColor("-  indented")).toBe("red");
+      expect(getLineStyle("-  indented")).toEqual({ color: "red" });
     });
   });
 
   describe("hunk headers", () => {
     test("returns cyan for @@ lines", () => {
-      expect(getLineColor("@@ -1,5 +1,6 @@")).toBe("cyan");
+      expect(getLineStyle("@@ -1,5 +1,6 @@")).toEqual({ color: "cyan" });
     });
 
     test("returns cyan for @@ with function context", () => {
-      expect(getLineColor("@@ -10,7 +10,8 @@ function test()")).toBe("cyan");
+      expect(getLineStyle("@@ -10,7 +10,8 @@ function test()")).toEqual({ color: "cyan" });
     });
   });
 
   describe("metadata lines", () => {
-    test("returns gray for diff --git", () => {
-      expect(getLineColor("diff --git a/file.txt b/file.txt")).toBe("gray");
+    test("returns dimColor for diff --git", () => {
+      expect(getLineStyle("diff --git a/file.txt b/file.txt")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for index line", () => {
-      expect(getLineColor("index abc1234..def5678 100644")).toBe("gray");
+    test("returns dimColor for index line", () => {
+      expect(getLineStyle("index abc1234..def5678 100644")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for --- header", () => {
-      expect(getLineColor("--- a/file.txt")).toBe("gray");
+    test("returns dimColor for --- header", () => {
+      expect(getLineStyle("--- a/file.txt")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for +++ header", () => {
-      expect(getLineColor("+++ b/file.txt")).toBe("gray");
+    test("returns dimColor for +++ header", () => {
+      expect(getLineStyle("+++ b/file.txt")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for new file mode", () => {
-      expect(getLineColor("new file mode 100644")).toBe("gray");
+    test("returns dimColor for new file mode", () => {
+      expect(getLineStyle("new file mode 100644")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for deleted file mode", () => {
-      expect(getLineColor("deleted file mode 100644")).toBe("gray");
+    test("returns dimColor for deleted file mode", () => {
+      expect(getLineStyle("deleted file mode 100644")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for rename from", () => {
-      expect(getLineColor("rename from old-name.txt")).toBe("gray");
+    test("returns dimColor for rename from", () => {
+      expect(getLineStyle("rename from old-name.txt")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for rename to", () => {
-      expect(getLineColor("rename to new-name.txt")).toBe("gray");
+    test("returns dimColor for rename to", () => {
+      expect(getLineStyle("rename to new-name.txt")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for similarity index", () => {
-      expect(getLineColor("similarity index 95%")).toBe("gray");
+    test("returns dimColor for similarity index", () => {
+      expect(getLineStyle("similarity index 95%")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for copy from", () => {
-      expect(getLineColor("copy from source.txt")).toBe("gray");
+    test("returns dimColor for copy from", () => {
+      expect(getLineStyle("copy from source.txt")).toEqual({ dimColor: true });
     });
 
-    test("returns gray for copy to", () => {
-      expect(getLineColor("copy to dest.txt")).toBe("gray");
+    test("returns dimColor for copy to", () => {
+      expect(getLineStyle("copy to dest.txt")).toEqual({ dimColor: true });
     });
   });
 
   describe("binary files", () => {
     test("returns magenta for binary files message", () => {
-      expect(getLineColor("Binary files a/image.png and b/image.png differ")).toBe("magenta");
+      expect(getLineStyle("Binary files a/image.png and b/image.png differ")).toEqual({ color: "magenta" });
     });
   });
 
   describe("context lines", () => {
-    test("returns undefined for context lines", () => {
-      expect(getLineColor(" context line")).toBeUndefined();
+    test("returns empty object for context lines", () => {
+      expect(getLineStyle(" context line")).toEqual({});
     });
 
-    test("returns undefined for empty line", () => {
-      expect(getLineColor("")).toBeUndefined();
+    test("returns empty object for empty line", () => {
+      expect(getLineStyle("")).toEqual({});
     });
 
-    test("returns undefined for plain text", () => {
-      expect(getLineColor("some random text")).toBeUndefined();
+    test("returns empty object for plain text", () => {
+      expect(getLineStyle("some random text")).toEqual({});
     });
   });
 
   describe("priority of patterns", () => {
     test("--- takes priority over single -", () => {
-      expect(getLineColor("--- a/file.txt")).toBe("gray");
+      expect(getLineStyle("--- a/file.txt")).toEqual({ dimColor: true });
     });
 
     test("+++ takes priority over single +", () => {
-      expect(getLineColor("+++ b/file.txt")).toBe("gray");
+      expect(getLineStyle("+++ b/file.txt")).toEqual({ dimColor: true });
     });
   });
 });

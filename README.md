@@ -103,21 +103,31 @@ Run `repos` without any arguments to launch the interactive menu:
 repos
 ```
 
+**Keyboard shortcuts:**
+| Key | Action |
+|-----|--------|
+| `↑↓` / `jk` | Navigate menu |
+| `Enter` | Select command |
+| `s,f,p,d,c` | Jump to git commands (Status, Fetch, Pull, Diff, Checkout) |
+| `o,x,e` | Jump to repo commands (Clone, Clean, Exec) |
+| `g,i` | Jump to settings (Config, Init) |
+| `q` | Quit |
+
 ### Commands
 
-| Command                    | Description                             |
-| :------------------------- | :-------------------------------------- |
-| `repos`                    | Launch interactive menu                 |
-| `repos init`               | Setup wizard for configuration          |
-| `repos status`             | Check status of all repositories        |
-| `repos fetch`              | Fetch latest changes from remotes       |
-| `repos pull`               | Pull latest changes for all repos       |
-| `repos diff`               | Show diffs across all repositories      |
-| `repos checkout <branch>`  | Switch branches across all repos        |
-| `repos clone`              | Clone repos from GitHub org             |
-| `repos clean`              | Revert changes in repositories          |
-| `repos exec "<command>"`   | Run arbitrary command across all repos  |
-| `repos config`             | View or modify configuration            |
+| Command                   | Description                            |
+| :------------------------ | :------------------------------------- |
+| `repos`                   | Launch interactive menu                |
+| `repos init`              | Setup wizard for configuration         |
+| `repos status`            | Check status of all repositories       |
+| `repos fetch`             | Fetch latest changes from remotes      |
+| `repos pull`              | Pull latest changes for all repos      |
+| `repos diff`              | Show diffs across all repositories     |
+| `repos checkout <branch>` | Switch branches across all repos       |
+| `repos clone`             | Clone repos from GitHub org            |
+| `repos clean`             | Revert changes in repositories         |
+| `repos exec "<command>"`  | Run arbitrary command across all repos |
+| `repos config`            | View or modify configuration           |
 
 ### Status Command
 
@@ -329,4 +339,3 @@ repos/
 ```
 
 </details>
-

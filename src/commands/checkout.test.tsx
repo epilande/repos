@@ -207,7 +207,7 @@ describe("CheckoutApp", () => {
 
         // Wait for completion first (Summary), then check for escape hint
         await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
-        expect(lastFrame()).toContain("Press Escape to return");
+        expect(lastFrame()).toContain("⌫/Esc Back");
 
         // Small delay to ensure useInput hook is fully registered
         await new Promise((r) => setTimeout(r, 50));

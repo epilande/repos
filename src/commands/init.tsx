@@ -50,11 +50,11 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   useInput(
     (input, key) => {
-      if (key.escape && step === "done") {
+      if (key.escape || key.delete) {
         onComplete?.();
       }
     },
-    { isActive: !!onComplete },
+    { isActive: !!onComplete && step !== "checking" && step !== "saving" },
   );
 
   useEffect(() => {
@@ -118,11 +118,11 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   if (error && step === "done") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="yellow">{error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -131,7 +131,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   if (step === "checking") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -152,7 +152,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     ];
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
@@ -175,6 +175,11 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
             />
           </Box>
         </Box>
+        {onComplete && (
+          <Box marginTop={1}>
+            <Text dimColor>↑↓ Navigate • Enter Select • ⌫/Esc Back</Text>
+          </Box>
+        )}
       </Box>
     );
   }
@@ -193,7 +198,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     }
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
@@ -213,13 +218,18 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
             />
           </Box>
         </Box>
+        {onComplete && (
+          <Box marginTop={1}>
+            <Text dimColor>↑↓ Navigate • Enter Select • ⌫/Esc Back</Text>
+          </Box>
+        )}
       </Box>
     );
   }
 
   if (step === "host-custom") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
@@ -240,7 +250,9 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text color="gray">Press Enter to continue</Text>
+          <Text dimColor>
+            Enter Continue{onComplete && " • ⌫/Esc Back"}
+          </Text>
         </Box>
       </Box>
     );
@@ -250,12 +262,12 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     const host = selectedHost === "custom" ? customHost : selectedHost;
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
         <Box marginTop={1}>
-          <Text color="gray">Host: {host}</Text>
+          <Text dimColor>Host: {host}</Text>
         </Box>
         <Box marginTop={1} flexDirection="column">
           <Text>Enter organization or username:</Text>
@@ -273,7 +285,9 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text color="gray">Press Enter to continue</Text>
+          <Text dimColor>
+            Enter Continue{onComplete && " • ⌫/Esc Back"}
+          </Text>
         </Box>
       </Box>
     );
@@ -281,17 +295,17 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   if (step === "days-input") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
         <Box marginTop={1}>
-          <Text color="gray">
+          <Text dimColor>
             Host: {selectedHost === "custom" ? customHost : selectedHost}
           </Text>
         </Box>
         <Box>
-          <Text color="gray">Org: {org}</Text>
+          <Text dimColor>Org: {org}</Text>
         </Box>
         <Box marginTop={1} flexDirection="column">
           <Text>Activity threshold (days to consider repo active):</Text>
@@ -307,7 +321,9 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text color="gray">Press Enter to continue (default: 90)</Text>
+          <Text dimColor>
+            Enter Continue (default: 90){onComplete && " • ⌫/Esc Back"}
+          </Text>
         </Box>
       </Box>
     );
@@ -326,20 +342,20 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     ];
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
         <Box marginTop={1}>
-          <Text color="gray">
+          <Text dimColor>
             Host: {selectedHost === "custom" ? customHost : selectedHost}
           </Text>
         </Box>
         <Box>
-          <Text color="gray">Org: {org}</Text>
+          <Text dimColor>Org: {org}</Text>
         </Box>
         <Box>
-          <Text color="gray">Days: {days}</Text>
+          <Text dimColor>Days: {days}</Text>
         </Box>
         <Box marginTop={1} flexDirection="column">
           <Text>Save configuration to:</Text>
@@ -353,13 +369,18 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
             />
           </Box>
         </Box>
+        {onComplete && (
+          <Box marginTop={1}>
+            <Text dimColor>↑↓ Navigate • Enter Select • ⌫/Esc Back</Text>
+          </Box>
+        )}
       </Box>
     );
   }
 
   if (step === "saving") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -374,12 +395,12 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     saveLocation === "cwd" ? getCwdConfigPath(basePath) : getHomeConfigPath();
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Text bold color="green">
         ✓ Configuration saved!
       </Text>
       <Box marginTop={1} flexDirection="column">
-        <Text color="gray">File: {configPath}</Text>
+        <Text dimColor>File: {configPath}</Text>
         <Box marginTop={1} flexDirection="column">
           <Text>
             Host: {selectedHost === "custom" ? customHost : selectedHost}
@@ -390,13 +411,13 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
       </Box>
       <Box marginTop={1} flexDirection="column">
         <Text color="cyan">Next steps:</Text>
-        <Text color="gray"> • repos clone - Clone active repositories</Text>
-        <Text color="gray"> • repos status - Check repository status</Text>
-        <Text color="gray"> • repos --help - See all commands</Text>
+        <Text dimColor> • repos clone - Clone active repositories</Text>
+        <Text dimColor> • repos status - Check repository status</Text>
+        <Text dimColor> • repos --help - See all commands</Text>
       </Box>
       {onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Escape to return to menu</Text>
+          <Text dimColor>⌫/Esc Back</Text>
         </Box>
       )}
     </Box>

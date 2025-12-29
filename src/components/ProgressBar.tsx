@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import { Box, Text } from "ink";
 
 interface ProgressBarProps {
@@ -33,7 +33,7 @@ export function ProgressBar({
         </Box>
       )}
       <Text color="green">{filledBar}</Text>
-      <Text color="gray">{emptyBar}</Text>
+      <Text dimColor>{emptyBar}</Text>
       {showPercentage && (
         <Box marginLeft={1}>
           <Text color="cyan">{percentage}%</Text>
@@ -41,7 +41,7 @@ export function ProgressBar({
       )}
       {showCount && (
         <Box marginLeft={1}>
-          <Text color="gray">
+          <Text dimColor>
             ({value}/{total})
           </Text>
         </Box>
@@ -62,9 +62,9 @@ export function SpinnerProgress({
   label = "Processing",
 }: SpinnerProgressProps) {
   const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-  const [frameIndex, setFrameIndex] = React.useState(0);
+  const [frameIndex, setFrameIndex] = useState(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % frames.length);
     }, 80);

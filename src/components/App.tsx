@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Box, Text, useApp, useStdout } from "ink";
+import { useState, useEffect, useCallback } from "react";
+import { Box, Text, useStdout } from "ink";
 import Spinner from "ink-spinner";
 import { StatusApp } from "../commands/status.js";
 import { PullApp } from "../commands/pull.js";
@@ -12,6 +12,7 @@ import { DiffApp } from "../commands/diff.js";
 import { CheckoutApp } from "../commands/checkout.js";
 import { ExecApp } from "../commands/exec.js";
 import { loadConfig } from "../lib/config.js";
+import { findRepos } from "../lib/repos.js";
 import { OptionsForm, type FormField } from "./OptionsForm.js";
 import { GroupedMenu, type MenuItem, type MenuGroup } from "./GroupedMenu.js";
 import type {
@@ -36,37 +37,35 @@ type Command =
   | "clean"
   | "exec"
   | "config"
-  | "init"
-  | "exit";
+  | "init";
 
 const menuGroups: MenuGroup[] = [
   {
     category: "git",
     label: "Git Operations",
     items: [
-      { label: "Status", value: "status" },
-      { label: "Fetch", value: "fetch" },
-      { label: "Pull", value: "pull" },
-      { label: "Diff", value: "diff" },
-      { label: "Checkout", value: "checkout" },
+      { label: "Status", value: "status", key: "s", description: "Check status of all repositories" },
+      { label: "Fetch", value: "fetch", key: "f", description: "Fetch updates from remote repositories" },
+      { label: "Pull", value: "pull", key: "p", description: "Pull changes into clean repositories" },
+      { label: "Diff", value: "diff", key: "d", description: "Show uncommitted changes across repos" },
+      { label: "Checkout", value: "checkout", key: "c", description: "Switch branches across repositories" },
     ],
   },
   {
     category: "repo",
-    label: "Repository Management",
+    label: "Management",
     items: [
-      { label: "Clone", value: "clone" },
-      { label: "Clean", value: "clean" },
-      { label: "Exec", value: "exec" },
+      { label: "Clone", value: "clone", key: "o", description: "Clone repositories from GitHub organization" },
+      { label: "Clean", value: "clean", key: "x", description: "Remove untracked and ignored files" },
+      { label: "Exec", value: "exec", key: "e", description: "Execute command in all repositories" },
     ],
   },
   {
     category: "settings",
     label: "Settings",
     items: [
-      { label: "Config", value: "config" },
-      { label: "Init", value: "init" },
-      { label: "Exit", value: "exit" },
+      { label: "Config", value: "config", key: "g", description: "View and edit configuration" },
+      { label: "Init", value: "init", key: "i", description: "Initialize repos in current directory" },
     ],
   },
 ];
@@ -276,6 +275,7 @@ function getCommandFields(
           type: "text",
           placeholder: "e.g., git log -1 --oneline",
           hint: "Shell command to run in each repository",
+          required: true,
         },
         {
           name: "quiet",
@@ -400,7 +400,6 @@ type CommandOptions =
   | { command: "init" };
 
 export function App() {
-  const { exit } = useApp();
   const { stdout } = useStdout();
   const [state, setState] = useState<AppState>("menu");
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
@@ -408,6 +407,13 @@ export function App() {
   const [runningCommand, setRunningCommand] = useState<CommandOptions | null>(
     null,
   );
+  const [repoCount, setRepoCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    findRepos()
+      .then((repos) => setRepoCount(repos.length))
+      .catch(() => {}); // Silently handle errors - count stays null
+  }, []);
 
   useEffect(() => {
     if (state === "loading" && selectedCommand) {
@@ -420,11 +426,6 @@ export function App() {
 
   const handleSelect = async (item: MenuItem) => {
     const command = item.value as Command;
-
-    if (command === "exit") {
-      exit();
-      return;
-    }
 
     if (commandsWithOptions.includes(command)) {
       setSelectedCommand(command);
@@ -684,18 +685,17 @@ export function App() {
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
-        <Text bold color="cyan">
-          repos
-        </Text>
-        <Text color="gray"> - Repository Manager</Text>
-      </Box>
-      <Box marginBottom={1}>
-        <Text>What would you like to do?</Text>
+        <Box flexGrow={1}>
+          <Text bold color="cyan">
+            repos
+          </Text>
+          <Text dimColor> - Repository Manager</Text>
+        </Box>
+        {repoCount !== null && (
+          <Text dimColor>{repoCount} repos tracked</Text>
+        )}
       </Box>
       <GroupedMenu groups={menuGroups} onSelect={handleSelect} />
-      <Box marginTop={1}>
-        <Text color="gray">Use arrow keys to navigate, Enter to select</Text>
-      </Box>
     </Box>
   );
 }

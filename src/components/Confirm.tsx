@@ -44,11 +44,11 @@ export function Confirm({
               <Text color="green" bold>
                 {">"} Yes
               </Text>
-              <Text color="gray"> / No</Text>
+              <Text dimColor> / No</Text>
             </>
           ) : (
             <>
-              <Text color="gray">Yes / </Text>
+              <Text dimColor>Yes / </Text>
               <Text color="red" bold>
                 {">"} No
               </Text>
@@ -57,7 +57,7 @@ export function Confirm({
         </Text>
       </Box>
       <Box marginTop={1}>
-        <Text color="gray">
+        <Text dimColor>
           Press Y/N or arrow keys to select, Enter to confirm, Esc to cancel
         </Text>
       </Box>
@@ -104,7 +104,7 @@ export function TypeConfirm({
           Type "<Text color="yellow">{confirmText}</Text>" to confirm:{" "}
         </Text>
         <Text color={isMatch ? "green" : "white"}>{input}</Text>
-        <Text color="gray">│</Text>
+        <Text dimColor>│</Text>
       </Box>
       {isMatch && (
         <Box marginTop={1}>
@@ -112,7 +112,7 @@ export function TypeConfirm({
         </Box>
       )}
       <Box marginTop={1}>
-        <Text color="gray">Press Esc to cancel</Text>
+        <Text dimColor>Esc Cancel</Text>
       </Box>
     </Box>
   );
