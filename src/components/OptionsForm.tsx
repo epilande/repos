@@ -11,6 +11,7 @@ export interface FormField {
   defaultValue?: boolean | string | number;
   placeholder?: string;
   hint?: string;
+  required?: boolean;
 }
 
 interface OptionsFormProps {
@@ -40,10 +41,24 @@ export function OptionsForm({
   const totalItems = fields.length;
 
   const [isEditing, setIsEditing] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const validateRequired = useCallback((): string | null => {
+    for (const field of fields) {
+      if (field.required) {
+        const val = values[field.name];
+        if (val === undefined || val === "" || val === null) {
+          return `${field.label} is required`;
+        }
+      }
+    }
+    return null;
+  }, [fields, values]);
 
   const currentField = fields[focusIndex] ?? null;
 
   const handleToggle = useCallback((fieldName: string) => {
+    setValidationError(null);
     setValues((prev) => ({
       ...prev,
       [fieldName]: !prev[fieldName],
@@ -51,6 +66,7 @@ export function OptionsForm({
   }, []);
 
   const handleTextChange = useCallback((fieldName: string, value: string) => {
+    setValidationError(null);
     setValues((prev) => ({
       ...prev,
       [fieldName]: value,
@@ -58,6 +74,7 @@ export function OptionsForm({
   }, []);
 
   const handleNumberChange = useCallback((fieldName: string, value: string) => {
+    setValidationError(null);
     const num = value === "" ? undefined : parseInt(value, 10);
     setValues((prev) => ({
       ...prev,
@@ -66,6 +83,12 @@ export function OptionsForm({
   }, []);
 
   const doSubmit = useCallback(() => {
+    const error = validateRequired();
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+
     const finalValues: Record<string, boolean | string | number | undefined> = {};
     for (const field of fields) {
       const val = values[field.name];
@@ -79,7 +102,7 @@ export function OptionsForm({
       }
     }
     onSubmit(finalValues);
-  }, [fields, values, onSubmit]);
+  }, [fields, values, onSubmit, validateRequired]);
 
   useInput((input, key) => {
     if (!isEditing) {
@@ -172,7 +195,9 @@ export function OptionsForm({
           <Text color={isFocused ? "cyan" : undefined}>
             {isFocused ? "❯ " : "  "}
           </Text>
-          <Text color={isFocused ? "white" : "gray"}>{field.label}: </Text>
+          <Text color={isFocused ? "white" : "gray"}>{field.label}</Text>
+          {field.required && <Text color="red">*</Text>}
+          <Text color={isFocused ? "white" : "gray"}>: </Text>
           {isEditingThis ? (
             <TextInput
               value={displayValue}
@@ -227,6 +252,12 @@ export function OptionsForm({
       <Box marginBottom={1}>
         <Text color="gray">{"─".repeat(40)}</Text>
       </Box>
+
+      {validationError && (
+        <Box marginBottom={1}>
+          <Text color="red">✗ {validationError}</Text>
+        </Box>
+      )}
 
       <Box flexDirection="column">
         <Text color="gray">

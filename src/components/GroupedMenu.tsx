@@ -28,9 +28,9 @@ export function GroupedMenu({ groups, onSelect }: GroupedMenuProps) {
   const totalItems = selectableItems.length;
   const selectedItem = selectableItems[selectedIndex];
 
-  // Responsive layout: 3 columns on wide, 2 on medium, 1 on narrow
+  // Responsive layout: 3 columns on wide terminals, 1 column on narrow
   const terminalWidth = stdout?.columns ?? 80;
-  const columnLayout = terminalWidth >= 100 ? 3 : terminalWidth >= 70 ? 2 : 1;
+  const columnLayout = terminalWidth >= 65 ? 3 : 1;
 
   useInput((input, key) => {
     if (input === "q") {
@@ -53,9 +53,6 @@ export function GroupedMenu({ groups, onSelect }: GroupedMenuProps) {
       }
     }
   });
-
-  const leftGroups = groups.filter((g) => g.category === "git");
-  const rightGroups = groups.filter((g) => g.category !== "git");
 
   // Track index across columns to maintain correct selection mapping
   let globalIndex = 0;
@@ -116,27 +113,6 @@ export function GroupedMenu({ groups, onSelect }: GroupedMenuProps) {
               {renderGroup(group)}
             </Box>
           ))}
-        </Box>
-
-        {renderDescription()}
-        {renderFooter()}
-      </Box>
-    );
-  }
-
-  // 2-column layout
-  if (columnLayout === 2) {
-    globalIndex = 0;
-
-    return (
-      <Box flexDirection="column">
-        <Box flexDirection="row" gap={4}>
-          <Box flexDirection="column" width={28}>
-            {leftGroups.map((group) => renderGroup(group))}
-          </Box>
-          <Box flexDirection="column" width={28}>
-            {rightGroups.map((group, idx) => renderGroup(group, idx > 0 ? 1 : 0))}
-          </Box>
         </Box>
 
         {renderDescription()}

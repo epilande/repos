@@ -275,6 +275,7 @@ function getCommandFields(
           type: "text",
           placeholder: "e.g., git log -1 --oneline",
           hint: "Shell command to run in each repository",
+          required: true,
         },
         {
           name: "quiet",

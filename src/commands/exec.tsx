@@ -60,6 +60,12 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
   useEffect(() => {
     async function runExec() {
       try {
+        if (!options.command) {
+          setError("No command specified");
+          setPhase("done");
+          return;
+        }
+
         const config = await loadConfig();
         const parallelCount = options.parallel ?? config.parallel ?? 10;
         setParallel(parallelCount);
@@ -166,9 +172,11 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
   const withOutput = results.filter(r => r.output).length;
   const duration = Math.round((Date.now() - startTime) / 1000);
 
-  const displayCmd = options.command.length > 40
-    ? options.command.slice(0, 37) + "..."
-    : options.command;
+  const displayCmd = options.command
+    ? (options.command.length > 40
+        ? options.command.slice(0, 37) + "..."
+        : options.command)
+    : "(no command)";
 
   return (
     <Box flexDirection="column">

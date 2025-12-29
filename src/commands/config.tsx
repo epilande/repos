@@ -25,7 +25,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
 
   useInput(
     (input, key) => {
-      if (key.escape && isDone) {
+      if ((key.escape || key.delete) && isDone) {
         onComplete?.();
       }
     },
@@ -99,7 +99,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text color="gray">Press Esc or Backspace to return to menu</Text>
           </Box>
         )}
       </Box>
@@ -115,7 +115,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
         )}
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text color="gray">Press Esc or Backspace to return to menu</Text>
           </Box>
         )}
       </Box>
@@ -155,7 +155,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
       </Box>
       {onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Escape to return to menu</Text>
+          <Text color="gray">Press Esc or Backspace to return to menu</Text>
         </Box>
       )}
     </Box>

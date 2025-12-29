@@ -50,11 +50,11 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   useInput(
     (input, key) => {
-      if (key.escape && step === "done") {
+      if (key.escape || key.delete) {
         onComplete?.();
       }
     },
-    { isActive: !!onComplete },
+    { isActive: !!onComplete && step !== "checking" && step !== "saving" },
   );
 
   useEffect(() => {
@@ -122,7 +122,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
         <Text color="yellow">{error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text color="gray">Press Esc or Backspace to return to menu</Text>
           </Box>
         )}
       </Box>
@@ -175,6 +175,11 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
             />
           </Box>
         </Box>
+        {onComplete && (
+          <Box marginTop={1}>
+            <Text color="gray">Press Esc or Backspace to return to menu</Text>
+          </Box>
+        )}
       </Box>
     );
   }
@@ -213,6 +218,11 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
             />
           </Box>
         </Box>
+        {onComplete && (
+          <Box marginTop={1}>
+            <Text color="gray">Press Esc or Backspace to return to menu</Text>
+          </Box>
+        )}
       </Box>
     );
   }
@@ -240,7 +250,10 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text color="gray">Press Enter to continue</Text>
+          <Text color="gray">
+            Press Enter to continue
+            {onComplete && " · Esc/Backspace to return"}
+          </Text>
         </Box>
       </Box>
     );
@@ -273,7 +286,10 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text color="gray">Press Enter to continue</Text>
+          <Text color="gray">
+            Press Enter to continue
+            {onComplete && " · Esc/Backspace to return"}
+          </Text>
         </Box>
       </Box>
     );
@@ -307,7 +323,10 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text color="gray">Press Enter to continue (default: 90)</Text>
+          <Text color="gray">
+            Press Enter to continue (default: 90)
+            {onComplete && " · Esc/Backspace to return"}
+          </Text>
         </Box>
       </Box>
     );
@@ -353,6 +372,11 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
             />
           </Box>
         </Box>
+        {onComplete && (
+          <Box marginTop={1}>
+            <Text color="gray">Press Esc or Backspace to return to menu</Text>
+          </Box>
+        )}
       </Box>
     );
   }
@@ -396,7 +420,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
       </Box>
       {onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Escape to return to menu</Text>
+          <Text color="gray">Press Esc or Backspace to return to menu</Text>
         </Box>
       )}
     </Box>
