@@ -165,23 +165,14 @@ export function OptionsForm({
     if (field.type === "toggle") {
       const isChecked = Boolean(value);
       return (
-        <Box key={field.name} flexDirection="column">
-          <Box>
-            <Text color={isFocused ? "cyan" : undefined}>
-              {isFocused ? "❯ " : "  "}
-            </Text>
-            <Text color={isFocused ? "cyan" : undefined}>
-              [{isChecked ? "✓" : " "}]
-            </Text>
-            <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}> {field.label}</Text>
-          </Box>
-          {field.hint && isFocused && (
-            <Box marginLeft={6}>
-              <Text dimColor italic>
-                {field.hint}
-              </Text>
-            </Box>
-          )}
+        <Box key={field.name}>
+          <Text color={isFocused ? "cyan" : undefined}>
+            {isFocused ? "❯ " : "  "}
+          </Text>
+          <Text color={isFocused ? "cyan" : undefined}>
+            [{isChecked ? "✓" : " "}]
+          </Text>
+          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}> {field.label}</Text>
         </Box>
       );
     }
@@ -217,13 +208,6 @@ export function OptionsForm({
             </Text>
           )}
         </Box>
-        {field.hint && isFocused && (
-          <Box marginLeft={2}>
-            <Text dimColor italic>
-              {field.hint}
-            </Text>
-          </Box>
-        )}
         {isFocused && !isEditing && (field.type === "text" || field.type === "number") && (
           <Box marginLeft={2}>
             <Text dimColor>Space to edit</Text>
@@ -233,6 +217,8 @@ export function OptionsForm({
     );
   };
 
+  const currentHint = currentField?.hint;
+
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
@@ -241,25 +227,23 @@ export function OptionsForm({
         </Text>
       </Box>
 
-      <Box marginBottom={1}>
-        <Text dimColor>{"─".repeat(40)}</Text>
-      </Box>
-
-      <Box flexDirection="column" marginBottom={1}>
+      <Box flexDirection="column">
         {fields.map((field, index) => renderField(field, index))}
       </Box>
 
-      <Box marginBottom={1}>
-        <Text dimColor>{"─".repeat(40)}</Text>
-      </Box>
+      {currentHint && (
+        <Box marginTop={1}>
+          <Text dimColor>{currentHint}</Text>
+        </Box>
+      )}
 
       {validationError && (
-        <Box marginBottom={1}>
+        <Box marginTop={1}>
           <Text color="red">✗ {validationError}</Text>
         </Box>
       )}
 
-      <Box flexDirection="column">
+      <Box marginTop={1}>
         <Text dimColor>
           ↑↓/jk Navigate • Space Toggle/Edit • Enter {submitLabel} •{" "}
           {isEditing ? "Esc Done" : "⌫/Esc Back"}

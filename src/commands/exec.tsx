@@ -145,7 +145,7 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
@@ -158,7 +158,7 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -181,7 +181,7 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
     : "(no command)";
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           Exec: {displayCmd}

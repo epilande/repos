@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import type { RepoStatus } from "../types.js";
+import { Divider } from "./Divider.js";
 
 interface StatusTableProps {
   repos: RepoStatus[];
@@ -112,9 +113,7 @@ export function StatusTable({ repos, showClean = true }: StatusTableProps) {
   return (
     <Box flexDirection="column">
       <TableHeader />
-      <Box marginY={1}>
-        <Text dimColor>{"─".repeat(77)}</Text>
-      </Box>
+      <Divider width={77} marginBottom={1} />
       {filteredRepos.map((status) => (
         <TableRow key={status.path} status={status} />
       ))}
@@ -136,8 +135,8 @@ export function StatusSummary({ repos }: SummaryProps) {
   const behind = repos.filter((r) => r.behind > 0).length;
 
   return (
-    <Box flexDirection="column" marginTop={1}>
-      <Text dimColor>{"─".repeat(40)}</Text>
+    <Box flexDirection="column">
+      <Divider width={40} />
       <Box marginTop={1} flexDirection="column">
         <Text>
           <Text bold>Total:</Text> {repos.length} repositories

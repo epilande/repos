@@ -118,7 +118,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   if (error && step === "done") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="yellow">{error}</Text>
         {onComplete && (
           <Box marginTop={1}>
@@ -131,7 +131,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   if (step === "checking") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -152,7 +152,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     ];
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
@@ -198,7 +198,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     }
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
@@ -229,7 +229,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   if (step === "host-custom") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
@@ -262,7 +262,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     const host = selectedHost === "custom" ? customHost : selectedHost;
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
@@ -295,7 +295,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   if (step === "days-input") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
@@ -342,7 +342,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     ];
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text bold color="cyan">
           repos init - Setup Wizard
         </Text>
@@ -380,7 +380,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 
   if (step === "saving") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -395,7 +395,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     saveLocation === "cwd" ? getCwdConfigPath(basePath) : getHomeConfigPath();
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Text bold color="green">
         ✓ Configuration saved!
       </Text>

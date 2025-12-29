@@ -13,6 +13,7 @@ import { directoryExists, runParallel } from "../lib/repos.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { ResultList, OperationStats } from "../components/RepoList.js";
 import { Confirm } from "../components/Confirm.js";
+import { Divider } from "../components/Divider.js";
 import type { CloneOptions, GitHubRepo, RepoOperationResult } from "../types.js";
 
 interface CloneAppProps {
@@ -216,7 +217,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {!options.org && (
           <Box marginTop={1}>
@@ -236,7 +237,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 
   if (phase === "checking") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -249,7 +250,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 
   if (phase === "fetching") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -270,7 +271,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
   const showingDryRunResults = isDryRun || phase === "confirmLiveRun";
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           {showingDryRunResults ? "Clone Preview (Dry Run)" : "Cloning Repositories"}
@@ -345,8 +346,8 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 
       {phase === "confirmLiveRun" && (
         <>
-          <Box flexDirection="column" marginTop={1}>
-            <Text dimColor>{"─".repeat(40)}</Text>
+          <Box flexDirection="column">
+            <Divider width={40} />
             <Box marginTop={1} flexDirection="column">
               <Text bold>Summary:</Text>
               <Text>
@@ -369,8 +370,8 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 
       {(phase === "done" || phase === "cancelled") && (
         <>
-          <Box flexDirection="column" marginTop={1}>
-            <Text dimColor>{"─".repeat(40)}</Text>
+          <Box flexDirection="column">
+            <Divider width={40} />
             <Box marginTop={1} flexDirection="column">
               <Text bold>{phase === "cancelled" ? "Cancelled" : "Summary"}:</Text>
               <Text>

@@ -174,7 +174,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -187,7 +187,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
   if (phase === "fetching" || phase === "checking" || phase === "cancelling") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">{phaseLabel}</Text>
           <Text dimColor> · {repoCount} repos · parallel: {parallel}</Text>
@@ -229,9 +229,9 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
   if (phase === "cancelled") {
     const cleanRepos = repos.filter(r => r.isClean && r.ahead === 0 && r.behind === 0);
     const dirtyRepos = repos.filter(r => !r.isClean || r.ahead > 0 || r.behind > 0);
-    
+
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">Repository Status</Text>
           <Text dimColor> · {repoCount} repos · parallel: {parallel}</Text>
@@ -278,7 +278,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         <ReturnHint visible={!!onComplete} />
       </Box>
@@ -293,7 +293,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
   if (options.quiet) {
     if (dirtyRepos.length === 0) {
       return (
-        <Box flexDirection="column">
+        <Box flexDirection="column" padding={1}>
           <Box marginBottom={1}>
             <Text bold color="cyan">Repository Status</Text>
             <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
@@ -313,16 +313,16 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
     }
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">Repository Status</Text>
           <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
         </Box>
-        
+
         {fetchErrors.length > 0 && (
           <ErrorsTable errors={fetchErrors} maxShow={10} />
         )}
-        
+
         <StatusTable repos={dirtyRepos} showClean={false} />
 
         <Summary>
@@ -344,7 +344,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
   if (options.summary) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">Repository Status Summary</Text>
           <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
@@ -376,16 +376,16 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
   }
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">Repository Status</Text>
         <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
       </Box>
-      
+
       {fetchErrors.length > 0 && (
         <ErrorsTable errors={fetchErrors} maxShow={10} />
       )}
-      
+
       <Box marginTop={1}>
         <StatusTable repos={repos} showClean={true} />
       </Box>

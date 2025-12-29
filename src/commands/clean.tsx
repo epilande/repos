@@ -169,7 +169,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
@@ -182,7 +182,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -195,7 +195,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 
   if (phase === "done" && dirtyRepos.length === 0 && results.length === 0) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="green">✓ All repositories are already clean!</Text>
         {onComplete && (
           <Box marginTop={1}>
@@ -238,7 +238,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 
   if (phase === "confirmLiveRun") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         {renderDryRunPreview()}
         <Box marginTop={1}>
           <Confirm
@@ -255,7 +255,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 
   if (isDryRun && phase === "done") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         {renderDryRunPreview()}
         <Box marginTop={1}>
           <Text dimColor>
@@ -275,7 +275,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
     );
 
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="red">
             ⚠ WARNING: Destructive Operation
@@ -309,7 +309,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
   const duration = Math.round((Date.now() - startTime) / 1000);
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           Cleaning Repositories

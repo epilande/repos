@@ -185,7 +185,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
@@ -198,7 +198,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -213,7 +213,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
 
   if (phase === "checking" || phase === "cancelling") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">
             Checkout Branch: {options.branch}
@@ -254,7 +254,7 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
   const errors = results.filter(r => !r.success && r.message !== "skipped" && r.message !== "not found").length;
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           Checkout Branch: {options.branch}

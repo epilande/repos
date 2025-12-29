@@ -133,7 +133,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
@@ -146,7 +146,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -161,7 +161,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
 
   if (phase === "diffing" || phase === "cancelling") {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
           <Text bold color="cyan">
             Repository Diff
@@ -200,7 +200,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
   const cleanRepos = reposProcessed - reposWithChanges;
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           Repository Diff

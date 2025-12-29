@@ -205,7 +205,7 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
@@ -218,7 +218,7 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -239,7 +239,7 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
   const flagsStr = fetchFlags.length > 0 ? ` (${fetchFlags.join(" ")})` : "";
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           {options.dryRun ? "Fetch Check (Dry Run)" : "Fetching Repositories"}

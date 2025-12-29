@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import type { RepoOperationResult } from "../types.js";
+import { Divider } from "./Divider.js";
 
 interface RepoListProps {
   repos: string[];
@@ -36,9 +37,6 @@ function getResultStyle(result: RepoOperationResult): {
   color: string;
 } {
   if (result.success) {
-    if (result.message === "up-to-date" || result.message === "already clean") {
-      return { icon: "✓", color: "green" };
-    }
     return { icon: "✓", color: "green" };
   }
   if (result.message === "skipped") {
@@ -120,8 +118,8 @@ export function OperationStats({
   operation,
 }: OperationStatsProps) {
   return (
-    <Box flexDirection="column" marginTop={1}>
-      <Text dimColor>{"─".repeat(40)}</Text>
+    <Box flexDirection="column">
+      <Divider width={40} />
       <Box marginTop={1} flexDirection="column">
         <Text bold>Summary:</Text>
         <Text>

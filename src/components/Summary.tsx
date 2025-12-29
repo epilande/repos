@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Text } from "ink";
+import { Divider } from "./Divider.js";
 
 interface SummaryRowProps {
   label: string;
@@ -34,8 +35,8 @@ interface SummaryProps {
 
 export function Summary({ title = "Summary", children, width = 50 }: SummaryProps) {
   return (
-    <Box flexDirection="column" marginTop={1}>
-      <Text dimColor>{"─".repeat(width)}</Text>
+    <Box flexDirection="column">
+      <Divider width={width} />
       <Box marginTop={1} flexDirection="column">
         <Text bold>{title}:</Text>
         {children}

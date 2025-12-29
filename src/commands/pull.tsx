@@ -346,7 +346,7 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
@@ -359,7 +359,7 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 
   if (phase === "finding") {
     return (
-      <Box>
+      <Box padding={1}>
         <Text color="cyan">
           <Spinner type="dots" />
         </Text>
@@ -379,7 +379,7 @@ export function PullApp({ options, onComplete }: PullAppProps) {
   const showingDryRunResults = isDryRun || phase === "confirmLiveRun";
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
           {showingDryRunResults ? "Update Check (Dry Run)" : "Updating Repositories"}
@@ -425,8 +425,8 @@ export function PullApp({ options, onComplete }: PullAppProps) {
       )}
 
       {phase === "confirmLiveRun" && (
-        <Box flexDirection="column" marginTop={1}>
-          <Text dimColor>{"─".repeat(50)}</Text>
+        <Box flexDirection="column">
+          <Divider width={50} />
           <Box marginTop={1} flexDirection="column">
             <Text bold>Summary:</Text>
             <Box>
@@ -471,8 +471,8 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 
       {/* Summary */}
       {(phase === "done" || phase === "cancelled") && (
-        <Box flexDirection="column" marginTop={1}>
-          <Text dimColor>{"─".repeat(50)}</Text>
+        <Box flexDirection="column">
+          <Divider width={50} />
           <Box marginTop={1} flexDirection="column">
             <Text bold>{phase === "cancelled" ? "Cancelled" : "Summary"}:</Text>
             <Box>

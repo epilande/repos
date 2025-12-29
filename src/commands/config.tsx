@@ -95,7 +95,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
 
   if (error) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
@@ -108,7 +108,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
 
   if (message) {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection="column" padding={1}>
         <Text color="green">{message}</Text>
         {configPath && (
           <Text dimColor>Config file: {configPath}</Text>
@@ -124,14 +124,14 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
 
   if (!config) {
     return (
-      <Box>
+      <Box padding={1}>
         <Text dimColor>Loading configuration...</Text>
       </Box>
     );
   }
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" padding={1}>
       <Text bold color="cyan">
         Current Configuration
       </Text>
