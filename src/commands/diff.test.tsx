@@ -185,4 +185,78 @@ describe("DiffApp", () => {
       }
     });
   });
+
+  describe("maxLines option", () => {
+    test("truncates diff at default 500 lines when maxLines not specified", async () => {
+      const { basePath, repos, cleanup } = await createTempRepoDir([
+        { name: "large-diff-repo" },
+      ]);
+
+      const largeContent = Array.from({ length: 600 }, (_, i) => `line ${i + 1}`).join("\n");
+      await writeFile(join(repos[0].path, "README.md"), largeContent);
+
+      try {
+        const { lastFrame, unmount } = render(
+          <DiffApp options={{ basePath }} onComplete={() => {}} />
+        );
+
+        await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
+
+        const frame = lastFrame()!;
+        expect(frame).toContain("showing 500 of");
+        expect(frame).toContain("--stat");
+        unmount();
+      } finally {
+        await cleanup();
+      }
+    });
+
+    test("shows full diff when maxLines is 0 (unlimited)", async () => {
+      const { basePath, repos, cleanup } = await createTempRepoDir([
+        { name: "large-diff-repo" },
+      ]);
+
+      const largeContent = Array.from({ length: 600 }, (_, i) => `line ${i + 1}`).join("\n");
+      await writeFile(join(repos[0].path, "README.md"), largeContent);
+
+      try {
+        const { lastFrame, unmount } = render(
+          <DiffApp options={{ basePath, maxLines: 0 }} onComplete={() => {}} />
+        );
+
+        await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
+
+        const frame = lastFrame()!;
+        expect(frame).not.toContain("showing");
+        expect(frame).toContain("line 600");
+        unmount();
+      } finally {
+        await cleanup();
+      }
+    });
+
+    test("truncates diff at custom maxLines value", async () => {
+      const { basePath, repos, cleanup } = await createTempRepoDir([
+        { name: "diff-repo" },
+      ]);
+
+      const content = Array.from({ length: 50 }, (_, i) => `line ${i + 1}`).join("\n");
+      await writeFile(join(repos[0].path, "README.md"), content);
+
+      try {
+        const { lastFrame, unmount } = render(
+          <DiffApp options={{ basePath, maxLines: 10 }} onComplete={() => {}} />
+        );
+
+        await waitFor(() => lastFrame()?.includes("Summary") ?? false, 5000);
+
+        const frame = lastFrame()!;
+        expect(frame).toContain("showing 10 of");
+        expect(frame).not.toContain("line 50");
+        unmount();
+      } finally {
+        await cleanup();
+      }
+    });
+  });
 });

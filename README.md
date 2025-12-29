@@ -177,7 +177,9 @@ repos clone --dry-run              # Preview what would be cloned
 ### Diff Command
 
 ```sh
-repos diff                   # Show diffs across all repos
+repos diff                   # Show diffs (default: 500 lines per repo)
+repos diff --max-lines 100   # Limit output to 100 lines per repo
+repos diff --max-lines 0     # Show full diff (no limit)
 repos diff --stat            # Show diffstat summary
 repos diff --quiet           # Only list repos with changes
 repos diff --parallel 5      # Limit concurrent operations
@@ -246,7 +248,8 @@ Create `.reposrc.json` in your project directory or home folder:
   "org": "my-org",
   "daysThreshold": 90,
   "parallel": 10,
-  "timeout": 30000
+  "timeout": 30000,
+  "diffMaxLines": 500
 }
 ```
 
@@ -258,6 +261,7 @@ Create `.reposrc.json` in your project directory or home folder:
 | `daysThreshold` | `90`                     | Only clone repos active within N days |
 | `parallel`      | `10`                     | Number of concurrent operations       |
 | `timeout`       | `30000`                  | Network timeout in milliseconds       |
+| `diffMaxLines`  | `500`                    | Max lines per diff (0 for unlimited)  |
 
 <details>
 <summary><strong>GitHub Enterprise Configuration</strong></summary>

@@ -9,6 +9,7 @@ export interface ReposConfig {
   daysThreshold?: number;
   parallel?: number;
   timeout?: number;
+  diffMaxLines?: number;
 }
 
 export const DEFAULT_CONFIG: Required<ReposConfig> = {
@@ -20,6 +21,7 @@ export const DEFAULT_CONFIG: Required<ReposConfig> = {
   daysThreshold: 90,
   parallel: 10,
   timeout: 30000,
+  diffMaxLines: 500,
 };
 
 export interface RepoStatus {
@@ -108,6 +110,7 @@ export interface DiffOptions {
   parallel?: number;
   interactive?: boolean;
   basePath?: string;
+  maxLines?: number;
 }
 
 export interface CheckoutOptions {

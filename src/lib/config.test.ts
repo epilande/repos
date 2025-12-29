@@ -41,6 +41,7 @@ describe("config.ts", () => {
         expect(config.parallel).toBe(DEFAULT_CONFIG.parallel);
         expect(config.timeout).toBe(DEFAULT_CONFIG.timeout);
         expect(config.daysThreshold).toBe(DEFAULT_CONFIG.daysThreshold);
+        expect(config.diffMaxLines).toBe(DEFAULT_CONFIG.diffMaxLines);
         expect(config.github?.host).toBe(DEFAULT_CONFIG.github?.host);
       } finally {
         await rm(tempDir, { recursive: true, force: true });
@@ -67,6 +68,48 @@ describe("config.ts", () => {
         expect(config.parallel).toBe(5);
         // Should merge with defaults
         expect(config.timeout).toBe(DEFAULT_CONFIG.timeout);
+      } finally {
+        await rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    test("loads diffMaxLines from config", async () => {
+      const tempDir = join(tmpdir(), `diff-config-${Date.now()}`);
+      await mkdir(tempDir, { recursive: true });
+
+      const customConfig = {
+        diffMaxLines: 200,
+      };
+
+      await writeFile(
+        join(tempDir, ".reposrc.json"),
+        JSON.stringify(customConfig)
+      );
+
+      try {
+        const config = await loadConfig(tempDir);
+        expect(config.diffMaxLines).toBe(200);
+      } finally {
+        await rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    test("loads diffMaxLines of 0 for unlimited", async () => {
+      const tempDir = join(tmpdir(), `diff-unlimited-${Date.now()}`);
+      await mkdir(tempDir, { recursive: true });
+
+      const customConfig = {
+        diffMaxLines: 0,
+      };
+
+      await writeFile(
+        join(tempDir, ".reposrc.json"),
+        JSON.stringify(customConfig)
+      );
+
+      try {
+        const config = await loadConfig(tempDir);
+        expect(config.diffMaxLines).toBe(0);
       } finally {
         await rm(tempDir, { recursive: true, force: true });
       }
