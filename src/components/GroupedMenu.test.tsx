@@ -117,6 +117,89 @@ describe("GroupedMenu", () => {
     });
   });
 
+  describe("group navigation (h/l)", () => {
+    test("l jumps to first item of next group", async () => {
+      const onSelect = mock(() => {});
+      const { stdin, lastFrame, unmount } = render(
+        <GroupedMenu groups={testGroups} onSelect={onSelect} />
+      );
+
+      expect(lastFrame()).toContain("Check status of all repositories");
+
+      await new Promise((r) => setTimeout(r, 50));
+      await sendKey(stdin, "l");
+
+      await waitFor(
+        () => lastFrame()?.includes("Clone repositories") ?? false,
+        1000
+      );
+      expect(lastFrame()).toContain("Clone repositories");
+      unmount();
+    });
+
+    test("h jumps to first item of previous group", async () => {
+      const onSelect = mock(() => {});
+      const { stdin, lastFrame, unmount } = render(
+        <GroupedMenu groups={testGroups} onSelect={onSelect} />
+      );
+
+      await new Promise((r) => setTimeout(r, 50));
+      await sendKey(stdin, "l");
+      await waitFor(
+        () => lastFrame()?.includes("Clone repositories") ?? false,
+        1000
+      );
+
+      await sendKey(stdin, "h");
+      await waitFor(
+        () => lastFrame()?.includes("Check status of all repositories") ?? false,
+        1000
+      );
+      expect(lastFrame()).toContain("Check status of all repositories");
+      unmount();
+    });
+
+    test("l wraps from last group to first group", async () => {
+      const onSelect = mock(() => {});
+      const { stdin, lastFrame, unmount } = render(
+        <GroupedMenu groups={testGroups} onSelect={onSelect} />
+      );
+
+      await new Promise((r) => setTimeout(r, 50));
+      await sendKey(stdin, "l");
+      await waitFor(
+        () => lastFrame()?.includes("Clone repositories") ?? false,
+        1000
+      );
+
+      await sendKey(stdin, "l");
+      await waitFor(
+        () => lastFrame()?.includes("Check status of all repositories") ?? false,
+        1000
+      );
+      expect(lastFrame()).toContain("Check status of all repositories");
+      unmount();
+    });
+
+    test("h wraps from first group to last group", async () => {
+      const onSelect = mock(() => {});
+      const { stdin, lastFrame, unmount } = render(
+        <GroupedMenu groups={testGroups} onSelect={onSelect} />
+      );
+
+      expect(lastFrame()).toContain("Check status of all repositories");
+
+      await new Promise((r) => setTimeout(r, 50));
+      await sendKey(stdin, "h");
+      await waitFor(
+        () => lastFrame()?.includes("Clone repositories") ?? false,
+        1000
+      );
+      expect(lastFrame()).toContain("Clone repositories");
+      unmount();
+    });
+  });
+
   describe("hotkeys", () => {
     test("pressing hotkey triggers onSelect for that item", async () => {
       let selectedItem: unknown = null;

@@ -115,19 +115,19 @@ repos
 
 ### Commands
 
-| Command                    | Description                             |
-| :------------------------- | :-------------------------------------- |
-| `repos`                    | Launch interactive menu                 |
-| `repos init`               | Setup wizard for configuration          |
-| `repos status`             | Check status of all repositories        |
-| `repos fetch`              | Fetch latest changes from remotes       |
-| `repos pull`               | Pull latest changes for all repos       |
-| `repos diff`               | Show diffs across all repositories      |
-| `repos checkout <branch>`  | Switch branches across all repos        |
-| `repos clone`              | Clone repos from GitHub org             |
-| `repos clean`              | Revert changes in repositories          |
-| `repos exec "<command>"`   | Run arbitrary command across all repos  |
-| `repos config`             | View or modify configuration            |
+| Command                   | Description                            |
+| :------------------------ | :------------------------------------- |
+| `repos`                   | Launch interactive menu                |
+| `repos init`              | Setup wizard for configuration         |
+| `repos status`            | Check status of all repositories       |
+| `repos fetch`             | Fetch latest changes from remotes      |
+| `repos pull`              | Pull latest changes for all repos      |
+| `repos diff`              | Show diffs across all repositories     |
+| `repos checkout <branch>` | Switch branches across all repos       |
+| `repos clone`             | Clone repos from GitHub org            |
+| `repos clean`             | Revert changes in repositories         |
+| `repos exec "<command>"`  | Run arbitrary command across all repos |
+| `repos config`            | View or modify configuration           |
 
 ### Status Command
 
@@ -339,4 +339,3 @@ repos/
 ```
 
 </details>
-

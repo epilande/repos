@@ -32,6 +32,18 @@ export function GroupedMenu({ groups, onSelect }: GroupedMenuProps) {
   const terminalWidth = stdout?.columns ?? 80;
   const columnLayout = terminalWidth >= 65 ? 3 : 1;
 
+  const getGroupIndex = (flatIdx: number) => {
+    let remaining = flatIdx;
+    for (let g = 0; g < groups.length; g++) {
+      if (remaining < groups[g].items.length) return g;
+      remaining -= groups[g].items.length;
+    }
+    return groups.length - 1;
+  };
+
+  const getGroupStartIndex = (groupIdx: number) =>
+    groups.slice(0, groupIdx).reduce((sum, g) => sum + g.items.length, 0);
+
   useInput((input, key) => {
     if (input === "q") {
       exit();
@@ -42,6 +54,14 @@ export function GroupedMenu({ groups, onSelect }: GroupedMenuProps) {
       setSelectedIndex((i) => (i > 0 ? i - 1 : totalItems - 1));
     } else if (key.downArrow || input === "j") {
       setSelectedIndex((i) => (i < totalItems - 1 ? i + 1 : 0));
+    } else if (key.leftArrow || input === "h") {
+      const curr = getGroupIndex(selectedIndex);
+      const prev = curr > 0 ? curr - 1 : groups.length - 1;
+      setSelectedIndex(getGroupStartIndex(prev));
+    } else if (key.rightArrow || input === "l") {
+      const curr = getGroupIndex(selectedIndex);
+      const next = curr < groups.length - 1 ? curr + 1 : 0;
+      setSelectedIndex(getGroupStartIndex(next));
     } else if (key.return) {
       onSelect(selectableItems[selectedIndex]);
     } else {

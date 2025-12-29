@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import { Box, Text } from "ink";
 
 interface ProgressBarProps {
@@ -62,9 +62,9 @@ export function SpinnerProgress({
   label = "Processing",
 }: SpinnerProgressProps) {
   const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-  const [frameIndex, setFrameIndex] = React.useState(0);
+  const [frameIndex, setFrameIndex] = useState(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % frames.length);
     }, 80);

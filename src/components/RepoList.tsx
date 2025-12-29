@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Text } from "ink";
 import type { RepoOperationResult } from "../types.js";
 import { Divider } from "./Divider.js";

@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactNode } from "react";
 import { Box, Text } from "ink";
 import { Divider } from "./Divider.js";
 
@@ -29,7 +29,7 @@ export function SummaryRow({
 
 interface SummaryProps {
   title?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   width?: number;
 }
 
