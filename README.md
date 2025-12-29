@@ -103,6 +103,16 @@ Run `repos` without any arguments to launch the interactive menu:
 repos
 ```
 
+**Keyboard shortcuts:**
+| Key | Action |
+|-----|--------|
+| `↑↓` / `jk` | Navigate menu |
+| `Enter` | Select command |
+| `s,f,p,d,c` | Jump to git commands (Status, Fetch, Pull, Diff, Checkout) |
+| `o,x,e` | Jump to repo commands (Clone, Clean, Exec) |
+| `g,i` | Jump to settings (Config, Init) |
+| `q` | Quit |
+
 ### Commands
 
 | Command                    | Description                             |
