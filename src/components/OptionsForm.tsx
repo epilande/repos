@@ -173,7 +173,7 @@ export function OptionsForm({
             <Text color={isFocused ? "cyan" : undefined}>
               [{isChecked ? "✓" : " "}]
             </Text>
-            <Text color={isFocused ? "white" : "gray"}> {field.label}</Text>
+            <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}> {field.label}</Text>
           </Box>
           {field.hint && isFocused && (
             <Box marginLeft={6}>
@@ -195,9 +195,9 @@ export function OptionsForm({
           <Text color={isFocused ? "cyan" : undefined}>
             {isFocused ? "❯ " : "  "}
           </Text>
-          <Text color={isFocused ? "white" : "gray"}>{field.label}</Text>
+          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}>{field.label}</Text>
           {field.required && <Text color="red">*</Text>}
-          <Text color={isFocused ? "white" : "gray"}>: </Text>
+          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}>: </Text>
           {isEditingThis ? (
             <TextInput
               value={displayValue}
@@ -212,7 +212,7 @@ export function OptionsForm({
               placeholder={field.placeholder}
             />
           ) : (
-            <Text color={displayValue ? "green" : "gray"}>
+            <Text color={displayValue ? "green" : undefined} dimColor={!displayValue}>
               {displayValue || field.placeholder || "(empty)"}
             </Text>
           )}
@@ -242,7 +242,7 @@ export function OptionsForm({
       </Box>
 
       <Box marginBottom={1}>
-        <Text color="gray">{"─".repeat(40)}</Text>
+        <Text dimColor>{"─".repeat(40)}</Text>
       </Box>
 
       <Box flexDirection="column" marginBottom={1}>
@@ -250,7 +250,7 @@ export function OptionsForm({
       </Box>
 
       <Box marginBottom={1}>
-        <Text color="gray">{"─".repeat(40)}</Text>
+        <Text dimColor>{"─".repeat(40)}</Text>
       </Box>
 
       {validationError && (
@@ -260,7 +260,7 @@ export function OptionsForm({
       )}
 
       <Box flexDirection="column">
-        <Text color="gray">
+        <Text dimColor>
           ↑↓/jk Navigate • Space Toggle/Edit • Enter {submitLabel} •{" "}
           {isEditing ? "Esc Done" : "⌫/Esc Back"}
         </Text>

@@ -122,7 +122,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
         <Text color="yellow">{error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Esc or Backspace to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -177,7 +177,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
         </Box>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Esc or Backspace to return to menu</Text>
+            <Text dimColor>↑↓ Navigate • Enter Select • ⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -220,7 +220,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
         </Box>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Esc or Backspace to return to menu</Text>
+            <Text dimColor>↑↓ Navigate • Enter Select • ⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -250,9 +250,8 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text color="gray">
-            Press Enter to continue
-            {onComplete && " · Esc/Backspace to return"}
+          <Text dimColor>
+            Enter Continue{onComplete && " • ⌫/Esc Back"}
           </Text>
         </Box>
       </Box>
@@ -268,7 +267,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           repos init - Setup Wizard
         </Text>
         <Box marginTop={1}>
-          <Text color="gray">Host: {host}</Text>
+          <Text dimColor>Host: {host}</Text>
         </Box>
         <Box marginTop={1} flexDirection="column">
           <Text>Enter organization or username:</Text>
@@ -286,9 +285,8 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text color="gray">
-            Press Enter to continue
-            {onComplete && " · Esc/Backspace to return"}
+          <Text dimColor>
+            Enter Continue{onComplete && " • ⌫/Esc Back"}
           </Text>
         </Box>
       </Box>
@@ -302,12 +300,12 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           repos init - Setup Wizard
         </Text>
         <Box marginTop={1}>
-          <Text color="gray">
+          <Text dimColor>
             Host: {selectedHost === "custom" ? customHost : selectedHost}
           </Text>
         </Box>
         <Box>
-          <Text color="gray">Org: {org}</Text>
+          <Text dimColor>Org: {org}</Text>
         </Box>
         <Box marginTop={1} flexDirection="column">
           <Text>Activity threshold (days to consider repo active):</Text>
@@ -323,9 +321,8 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text color="gray">
-            Press Enter to continue (default: 90)
-            {onComplete && " · Esc/Backspace to return"}
+          <Text dimColor>
+            Enter Continue (default: 90){onComplete && " • ⌫/Esc Back"}
           </Text>
         </Box>
       </Box>
@@ -350,15 +347,15 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           repos init - Setup Wizard
         </Text>
         <Box marginTop={1}>
-          <Text color="gray">
+          <Text dimColor>
             Host: {selectedHost === "custom" ? customHost : selectedHost}
           </Text>
         </Box>
         <Box>
-          <Text color="gray">Org: {org}</Text>
+          <Text dimColor>Org: {org}</Text>
         </Box>
         <Box>
-          <Text color="gray">Days: {days}</Text>
+          <Text dimColor>Days: {days}</Text>
         </Box>
         <Box marginTop={1} flexDirection="column">
           <Text>Save configuration to:</Text>
@@ -374,7 +371,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
         </Box>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Esc or Backspace to return to menu</Text>
+            <Text dimColor>↑↓ Navigate • Enter Select • ⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -403,7 +400,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
         ✓ Configuration saved!
       </Text>
       <Box marginTop={1} flexDirection="column">
-        <Text color="gray">File: {configPath}</Text>
+        <Text dimColor>File: {configPath}</Text>
         <Box marginTop={1} flexDirection="column">
           <Text>
             Host: {selectedHost === "custom" ? customHost : selectedHost}
@@ -414,13 +411,13 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
       </Box>
       <Box marginTop={1} flexDirection="column">
         <Text color="cyan">Next steps:</Text>
-        <Text color="gray"> • repos clone - Clone active repositories</Text>
-        <Text color="gray"> • repos status - Check repository status</Text>
-        <Text color="gray"> • repos --help - See all commands</Text>
+        <Text dimColor> • repos clone - Clone active repositories</Text>
+        <Text dimColor> • repos status - Check repository status</Text>
+        <Text dimColor> • repos --help - See all commands</Text>
       </Box>
       {onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Esc or Backspace to return to menu</Text>
+          <Text dimColor>⌫/Esc Back</Text>
         </Box>
       )}
     </Box>

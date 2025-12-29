@@ -5,7 +5,7 @@ interface DividerProps {
   width?: number;
   marginTop?: number;
   marginBottom?: number;
-  color?: string;
+  dimColor?: boolean;
   char?: string;
 }
 
@@ -13,12 +13,12 @@ export function Divider({
   width = 50,
   marginTop = 1,
   marginBottom = 0,
-  color = "gray",
+  dimColor = true,
   char = "─",
 }: DividerProps) {
   return (
     <Box marginTop={marginTop} marginBottom={marginBottom}>
-      <Text color={color}>{char.repeat(width)}</Text>
+      <Text dimColor={dimColor}>{char.repeat(width)}</Text>
     </Box>
   );
 }

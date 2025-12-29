@@ -191,9 +191,9 @@ describe("StatusApp", () => {
           <StatusApp options={{ basePath }} onComplete={onComplete} />
         );
 
-        await waitFor(() => lastFrame()?.includes("Press Escape") ?? false, 5000);
+        await waitFor(() => lastFrame()?.includes("⌫/Esc Back") ?? false, 5000);
 
-        expect(lastFrame()).toContain("Press Escape");
+        expect(lastFrame()).toContain("⌫/Esc Back");
 
         // Small delay to ensure useInput hook is fully registered
         await new Promise((r) => setTimeout(r, 50));

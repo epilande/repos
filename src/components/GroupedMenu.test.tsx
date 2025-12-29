@@ -4,6 +4,9 @@ import { render } from "ink-testing-library";
 import { GroupedMenu, type MenuGroup } from "./GroupedMenu.js";
 import { waitFor } from "../../tests/helpers/ink-test-utils.js";
 
+// Strip ANSI escape codes for reliable string matching
+const stripAnsi = (str: string) => str.replace(/\u001b\[[0-9;]*m/g, "");
+
 const testGroups: MenuGroup[] = [
   {
     category: "git",
@@ -50,7 +53,7 @@ describe("GroupedMenu", () => {
         <GroupedMenu groups={testGroups} onSelect={onSelect} />
       );
 
-      const frame = lastFrame();
+      const frame = stripAnsi(lastFrame() ?? "");
       expect(frame).toContain("s  Status");
       expect(frame).toContain("f  Fetch");
       expect(frame).toContain("o  Clone");
@@ -76,9 +79,9 @@ describe("GroupedMenu", () => {
       );
 
       const frame = lastFrame();
-      expect(frame).toContain("navigate");
-      expect(frame).toContain("Enter");
-      expect(frame).toContain("q quit");
+      expect(frame).toContain("Navigate");
+      expect(frame).toContain("Enter Select");
+      expect(frame).toContain("q Quit");
       unmount();
     });
 

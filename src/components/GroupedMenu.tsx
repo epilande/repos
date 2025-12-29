@@ -96,7 +96,7 @@ export function GroupedMenu({ groups, onSelect }: GroupedMenuProps) {
 
   const renderFooter = () => (
     <Box marginTop={1}>
-      <Text dimColor>↑↓ navigate • Enter select • q quit</Text>
+      <Text dimColor>↑↓/jk Navigate • Enter Select • q Quit</Text>
     </Box>
   );
 

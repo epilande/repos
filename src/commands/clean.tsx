@@ -162,6 +162,8 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
       } else if ((phase === "done" || phase === "cancelled") && onComplete) {
         onComplete();
       }
+    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
+      onComplete();
     }
   });
 
@@ -171,7 +173,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -197,7 +199,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
         <Text color="green">✓ All repositories are already clean!</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -225,7 +227,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
             return (
               <Text key={repo.path}>
                 <Text color="yellow">•</Text> {repo.name}{" "}
-                <Text color="gray">({changes.join(", ")})</Text>
+                <Text dimColor>({changes.join(", ")})</Text>
               </Text>
             );
           })}
@@ -256,7 +258,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
       <Box flexDirection="column">
         {renderDryRunPreview()}
         <Box marginTop={1}>
-          <Text color="gray">
+          <Text dimColor>
             Run without --dry-run to actually clean these repositories.
           </Text>
         </Box>
@@ -287,7 +289,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
         <Box marginY={1} paddingLeft={2}>
           <RepoList repos={repoNames} maxShow={10} />
         </Box>
-        <Text color="gray">
+        <Text dimColor>
           Total files affected: ~{totalChanges}
         </Text>
         <Box marginTop={1}>
@@ -334,7 +336,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
             </Box>
           ) : (
             <Box marginTop={1}>
-              <Text color="gray">Press Escape to cancel</Text>
+              <Text dimColor>Esc Cancel</Text>
             </Box>
           )}
         </>
@@ -366,7 +368,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
           )}
           {onComplete && (
             <Box marginTop={1}>
-              <Text color="gray">Press Escape to return to menu</Text>
+              <Text dimColor>⌫/Esc Back</Text>
             </Box>
           )}
         </>

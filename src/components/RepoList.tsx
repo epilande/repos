@@ -19,7 +19,7 @@ export function RepoList({ repos, maxShow = 10 }: RepoListProps) {
         </Text>
       ))}
       {remaining > 0 && (
-        <Text color="gray">... and {remaining} more</Text>
+        <Text dimColor>... and {remaining} more</Text>
       )}
     </Box>
   );
@@ -79,7 +79,7 @@ export function ResultList({
                 <Text>{result.name}</Text>
               </Box>
               <Box marginLeft={1}>
-                <Text color="gray">
+                <Text dimColor>
                   - {result.message}
                   {result.details && ` (${result.details})`}
                 </Text>
@@ -96,7 +96,7 @@ export function ResultList({
         );
       })}
       {remaining > 0 && (
-        <Text color="gray">... and {remaining} more</Text>
+        <Text dimColor>... and {remaining} more</Text>
       )}
     </Box>
   );
@@ -121,7 +121,7 @@ export function OperationStats({
 }: OperationStatsProps) {
   return (
     <Box flexDirection="column" marginTop={1}>
-      <Text color="gray">{"─".repeat(40)}</Text>
+      <Text dimColor>{"─".repeat(40)}</Text>
       <Box marginTop={1} flexDirection="column">
         <Text bold>Summary:</Text>
         <Text>
@@ -131,7 +131,7 @@ export function OperationStats({
         {skipped > 0 && <Text color="yellow">Skipped: {skipped}</Text>}
         {failed > 0 && <Text color="red">Failed: {failed}</Text>}
         {duration !== undefined && (
-          <Text color="gray">Duration: {duration}s</Text>
+          <Text dimColor>Duration: {duration}s</Text>
         )}
       </Box>
     </Box>

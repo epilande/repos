@@ -33,7 +33,7 @@ export function ProgressBar({
         </Box>
       )}
       <Text color="green">{filledBar}</Text>
-      <Text color="gray">{emptyBar}</Text>
+      <Text dimColor>{emptyBar}</Text>
       {showPercentage && (
         <Box marginLeft={1}>
           <Text color="cyan">{percentage}%</Text>
@@ -41,7 +41,7 @@ export function ProgressBar({
       )}
       {showCount && (
         <Box marginLeft={1}>
-          <Text color="gray">
+          <Text dimColor>
             ({value}/{total})
           </Text>
         </Box>

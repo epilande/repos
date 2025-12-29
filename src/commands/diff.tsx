@@ -126,6 +126,8 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
       } else if ((phase === "done" || phase === "cancelled") && onComplete) {
         onComplete();
       }
+    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
+      onComplete();
     }
   });
 
@@ -135,7 +137,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -164,7 +166,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
           <Text bold color="cyan">
             Repository Diff
           </Text>
-          <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
+          <Text dimColor> • {repos.length} repos • parallel: {parallel}</Text>
         </Box>
 
         <Box marginBottom={1}>
@@ -186,7 +188,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
           </Box>
         ) : (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to cancel</Text>
+            <Text dimColor>Esc Cancel</Text>
           </Box>
         )}
       </Box>
@@ -203,7 +205,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
         <Text bold color="cyan">
           Repository Diff
         </Text>
-        <Text color="gray"> • {repos.length} repos • parallel: {parallel}</Text>
+        <Text dimColor> • {repos.length} repos • parallel: {parallel}</Text>
       </Box>
 
       {reposWithChanges === 0 && phase !== "cancelled" ? (
@@ -262,9 +264,9 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
           )}
           <Box>
             <Box width={25}>
-              <Text color="gray">Duration:</Text>
+              <Text dimColor>Duration:</Text>
             </Box>
-            <Text color="gray">{duration}s</Text>
+            <Text dimColor>{duration}s</Text>
           </Box>
         </Box>
       </Box>
@@ -279,7 +281,7 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
 
       {(phase === "done" || phase === "cancelled") && onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Escape to return to menu</Text>
+          <Text dimColor>⌫/Esc Back</Text>
         </Box>
       )}
     </Box>

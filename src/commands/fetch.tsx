@@ -39,7 +39,7 @@ function ResultRow({ result }: { result: RepoOperationResult }) {
         </Text>
       </Box>
       {result.error && (
-        <Text color="gray">({result.error})</Text>
+        <Text dimColor>({result.error})</Text>
       )}
     </Box>
   );
@@ -68,7 +68,7 @@ function ResultsTable({
                 <ResultRow key={r.name} result={r} />
               ))}
               {successful.length > maxShow && (
-                <Text color="gray">  ... and {successful.length - maxShow} more</Text>
+                <Text dimColor>  ... and {successful.length - maxShow} more</Text>
               )}
             </>
           ) : (
@@ -84,7 +84,7 @@ function ResultsTable({
             <ResultRow key={r.name} result={r} />
           ))}
           {errors.length > maxShow && (
-            <Text color="gray">  ... and {errors.length - maxShow} more</Text>
+            <Text dimColor>  ... and {errors.length - maxShow} more</Text>
           )}
         </Box>
       )}
@@ -198,6 +198,8 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
       } else if ((phase === "done" || phase === "cancelled") && onComplete) {
         onComplete();
       }
+    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
+      onComplete();
     }
   });
 
@@ -207,7 +209,7 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
         <Text color="red">Error: {error}</Text>
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -242,7 +244,7 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
         <Text bold color="cyan">
           {options.dryRun ? "Fetch Check (Dry Run)" : "Fetching Repositories"}
         </Text>
-        <Text color="gray"> • {repos.length} repos • parallel: {parallel}{flagsStr}</Text>
+        <Text dimColor> • {repos.length} repos • parallel: {parallel}{flagsStr}</Text>
       </Box>
 
       {(phase === "fetching" || phase === "cancelling") && (
@@ -265,7 +267,7 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
             </Box>
           ) : (
             <Box marginTop={1}>
-              <Text color="gray">Press Escape to cancel</Text>
+              <Text dimColor>Esc Cancel</Text>
             </Box>
           )}
         </>
@@ -319,9 +321,9 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
             )}
             <Box>
               <Box width={25}>
-                <Text color="gray">Duration:</Text>
+                <Text dimColor>Duration:</Text>
               </Box>
-              <Text color="gray">{duration}s</Text>
+              <Text dimColor>{duration}s</Text>
             </Box>
           </Box>
         </Box>
@@ -345,7 +347,7 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
 
       {(phase === "done" || phase === "cancelled") && onComplete && (
         <Box marginTop={1}>
-          <Text color="gray">Press Escape to return to menu</Text>
+          <Text dimColor>⌫/Esc Back</Text>
         </Box>
       )}
     </Box>

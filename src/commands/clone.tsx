@@ -209,6 +209,8 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
       } else if ((phase === "done" || phase === "cancelled") && onComplete) {
         onComplete();
       }
+    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
+      onComplete();
     }
   });
 
@@ -218,14 +220,14 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
         <Text color="red">Error: {error}</Text>
         {!options.org && (
           <Box marginTop={1}>
-            <Text color="gray">
+            <Text dimColor>
               Tip: Run 'repos init' to set up your configuration.
             </Text>
           </Box>
         )}
         {onComplete && (
           <Box marginTop={1}>
-            <Text color="gray">Press Escape to return to menu</Text>
+            <Text dimColor>⌫/Esc Back</Text>
           </Box>
         )}
       </Box>
@@ -273,7 +275,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
         <Text bold color="cyan">
           {showingDryRunResults ? "Clone Preview (Dry Run)" : "Cloning Repositories"}
         </Text>
-        <Text color="gray"> from {org}</Text>
+        <Text dimColor> from {org}</Text>
         {options.shallow && <Text color="yellow"> (shallow)</Text>}
       </Box>
 
@@ -300,7 +302,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
             {activeReposSet.size > 0 ? (
               <>
                 <Box>
-                  <Text color="gray">
+                  <Text dimColor>
                     <Spinner type="dots" />
                   </Text>
                   <Box marginLeft={1}>
@@ -318,7 +320,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
               </>
             ) : (
               <Box>
-                <Text color="gray">
+                <Text dimColor>
                   <Spinner type="dots" />
                 </Text>
                 <Box marginLeft={1}>
@@ -329,7 +331,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
           </Box>
           {phase === "cloning" && (
             <Box marginTop={1}>
-              <Text color="gray">Press Escape to cancel</Text>
+              <Text dimColor>Esc Cancel</Text>
             </Box>
           )}
         </>
@@ -344,7 +346,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
       {phase === "confirmLiveRun" && (
         <>
           <Box flexDirection="column" marginTop={1}>
-            <Text color="gray">{"─".repeat(40)}</Text>
+            <Text dimColor>{"─".repeat(40)}</Text>
             <Box marginTop={1} flexDirection="column">
               <Text bold>Summary:</Text>
               <Text>
@@ -368,7 +370,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
       {(phase === "done" || phase === "cancelled") && (
         <>
           <Box flexDirection="column" marginTop={1}>
-            <Text color="gray">{"─".repeat(40)}</Text>
+            <Text dimColor>{"─".repeat(40)}</Text>
             <Box marginTop={1} flexDirection="column">
               <Text bold>{phase === "cancelled" ? "Cancelled" : "Summary"}:</Text>
               <Text>
@@ -383,7 +385,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
                   {phase === "cancelled" && (
                     <Text color="yellow">Skipped: {repos.length - results.length}</Text>
                   )}
-                  <Text color="gray">Duration: {duration}s</Text>
+                  <Text dimColor>Duration: {duration}s</Text>
                 </>
               )}
             </Box>
@@ -407,7 +409,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 
           {onComplete && (
             <Box marginTop={1}>
-              <Text color="gray">Press Escape to return to menu</Text>
+              <Text dimColor>⌫/Esc Back</Text>
             </Box>
           )}
         </>

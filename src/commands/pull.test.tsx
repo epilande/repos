@@ -118,8 +118,8 @@ describe("PullApp", () => {
           />
         );
 
-        await waitFor(() => lastFrame()?.includes("Press Escape") ?? false, 10000);
-        expect(lastFrame()).toContain("Press Escape");
+        await waitFor(() => lastFrame()?.includes("⌫/Esc Back") ?? false, 10000);
+        expect(lastFrame()).toContain("⌫/Esc Back");
 
         // Small delay to ensure useInput hook is fully registered
         await new Promise((r) => setTimeout(r, 50));
