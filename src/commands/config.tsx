@@ -190,6 +190,11 @@ function ConfigValue({ label, value }: ConfigValueProps) {
 }
 
 export async function runConfig(options: ConfigOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciConfig } = await import("../lib/ci.js");
+    await ciConfig(options);
+    return;
+  }
   const { waitUntilExit } = render(<ConfigApp options={options} />);
   await waitUntilExit();
 }

@@ -608,6 +608,11 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 }
 
 export async function runPull(options: UpdateOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciPull } = await import("../lib/ci.js");
+    await ciPull(options);
+    return;
+  }
   const { waitUntilExit } = render(<PullApp options={options} />);
   await waitUntilExit();
 }

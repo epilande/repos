@@ -390,6 +390,11 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
 }
 
 export async function runCheckout(options: CheckoutOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciCheckout } = await import("../lib/ci.js");
+    await ciCheckout(options);
+    return;
+  }
   const { waitUntilExit } = render(<CheckoutApp options={options} />);
   await waitUntilExit();
 }

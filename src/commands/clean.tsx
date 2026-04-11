@@ -430,6 +430,11 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 }
 
 export async function runClean(options: CleanupOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciClean } = await import("../lib/ci.js");
+    await ciClean(options);
+    return;
+  }
   const { waitUntilExit } = render(<CleanApp options={options} />);
   await waitUntilExit();
 }

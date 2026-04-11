@@ -324,6 +324,11 @@ export function ExecApp({ options, onComplete }: ExecAppProps) {
 }
 
 export async function runExec(options: ExecOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciExec } = await import("../lib/ci.js");
+    await ciExec(options);
+    return;
+  }
   const { waitUntilExit } = render(<ExecApp options={options} />);
   await waitUntilExit();
 }

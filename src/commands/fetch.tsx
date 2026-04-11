@@ -388,6 +388,11 @@ export function FetchApp({ options, onComplete }: FetchAppProps) {
 }
 
 export async function runFetch(options: FetchOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciFetch } = await import("../lib/ci.js");
+    await ciFetch(options);
+    return;
+  }
   const { waitUntilExit } = render(<FetchApp options={options} />);
   await waitUntilExit();
 }

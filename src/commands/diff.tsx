@@ -334,6 +334,11 @@ export function DiffApp({ options, onComplete }: DiffAppProps) {
 }
 
 export async function runDiff(options: DiffOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciDiff } = await import("../lib/ci.js");
+    await ciDiff(options);
+    return;
+  }
   const { waitUntilExit } = render(<DiffApp options={options} />);
   await waitUntilExit();
 }

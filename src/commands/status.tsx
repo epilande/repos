@@ -532,6 +532,11 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 }
 
 export async function runStatus(options: StatusOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciStatus } = await import("../lib/ci.js");
+    await ciStatus(options);
+    return;
+  }
   const { waitUntilExit } = render(<StatusApp options={options} />);
   await waitUntilExit();
 }
