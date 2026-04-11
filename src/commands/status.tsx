@@ -4,13 +4,24 @@ import Spinner from "ink-spinner";
 import { findRepos, filterRepos, runParallel } from "../lib/repos.js";
 import { fetchRepo, getRepoStatus } from "../lib/git.js";
 import { loadConfig } from "../lib/config.js";
+import { isInteractive } from "../lib/tty.js";
 import { StatusTable, StatusSummary } from "../components/StatusTable.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { Divider } from "../components/Divider.js";
 import { Summary, SummaryRow, ReturnHint } from "../components/Summary.js";
-import type { StatusOptions, RepoStatus, RepoOperationResult } from "../types.js";
+import type {
+  StatusOptions,
+  RepoStatus,
+  RepoOperationResult,
+} from "../types.js";
 
-type Phase = "finding" | "fetching" | "checking" | "cancelling" | "done" | "cancelled";
+type Phase =
+  | "finding"
+  | "fetching"
+  | "checking"
+  | "cancelling"
+  | "done"
+  | "cancelled";
 
 function ErrorRow({ result }: { result: RepoOperationResult }) {
   return (
@@ -19,22 +30,23 @@ function ErrorRow({ result }: { result: RepoOperationResult }) {
         <Text color="red">✗</Text>
       </Box>
       <Box width={28}>
-        <Text>{result.name.slice(0, 26)}{result.name.length > 26 ? "…" : ""}</Text>
+        <Text>
+          {result.name.slice(0, 26)}
+          {result.name.length > 26 ? "…" : ""}
+        </Text>
       </Box>
       <Box width={16}>
         <Text color="red">error</Text>
       </Box>
-      {result.error && (
-        <Text dimColor>({result.error})</Text>
-      )}
+      {result.error && <Text dimColor>({result.error})</Text>}
     </Box>
   );
 }
 
-function ErrorsTable({ 
-  errors, 
-  maxShow = 8 
-}: { 
+function ErrorsTable({
+  errors,
+  maxShow = 8,
+}: {
   errors: RepoOperationResult[];
   maxShow?: number;
 }) {
@@ -42,12 +54,14 @@ function ErrorsTable({
 
   return (
     <Box flexDirection="column" marginBottom={1}>
-      <Text color="red" bold>Errors ({errors.length}):</Text>
-      {errors.slice(0, maxShow).map(r => (
+      <Text color="red" bold>
+        Errors ({errors.length}):
+      </Text>
+      {errors.slice(0, maxShow).map((r) => (
         <ErrorRow key={r.name} result={r} />
       ))}
       {errors.length > maxShow && (
-        <Text dimColor>  ... and {errors.length - maxShow} more</Text>
+        <Text dimColor> ... and {errors.length - maxShow} more</Text>
       )}
     </Box>
   );
@@ -100,7 +114,7 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
         if (options.fetch) {
           setPhase("fetching");
           const errors: RepoOperationResult[] = [];
-          
+
           const { cancelled } = await runParallel(
             repoPaths,
             async (repoPath) => {
@@ -113,9 +127,9 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
             },
             concurrency,
             (completed, total) => setProgress({ completed, total }),
-            () => cancelledRef.current
+            () => cancelledRef.current,
           );
-          
+
           if (cancelled) {
             setPhase("cancelled");
             return;
@@ -124,14 +138,15 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
 
         setPhase("checking");
         setProgress({ completed: 0, total: repoPaths.length });
-        
-        const { results: statuses, cancelled: statusCancelled } = await runParallel(
-          repoPaths,
-          async (repoPath) => getRepoStatus(repoPath),
-          concurrency,
-          (completed, total) => setProgress({ completed, total }),
-          () => cancelledRef.current
-        );
+
+        const { results: statuses, cancelled: statusCancelled } =
+          await runParallel(
+            repoPaths,
+            async (repoPath) => getRepoStatus(repoPath),
+            concurrency,
+            (completed, total) => setProgress({ completed, total }),
+            () => cancelledRef.current,
+          );
 
         if (statusCancelled) {
           setRepos(statuses.filter(Boolean));
@@ -150,18 +165,29 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
     loadStatus();
   }, [options.filter, options.fetch, options.basePath]);
 
-  useInput((input, key) => {
-    if (key.escape) {
-      if (phase === "finding" || phase === "fetching" || phase === "checking") {
-        cancelledRef.current = true;
-        setPhase("cancelling");
-      } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        if (
+          phase === "finding" ||
+          phase === "fetching" ||
+          phase === "checking"
+        ) {
+          cancelledRef.current = true;
+          setPhase("cancelling");
+        } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+          onComplete();
+        }
+      } else if (
+        key.delete &&
+        (phase === "done" || phase === "cancelled") &&
+        onComplete
+      ) {
         onComplete();
       }
-    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
-      onComplete();
-    }
-  });
+    },
+    { isActive: isInteractive() },
+  );
 
   useEffect(() => {
     if (!onComplete && (phase === "done" || phase === "cancelled")) {
@@ -169,7 +195,12 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
     }
   }, [phase, onComplete]);
 
-  const phaseLabel = phase === "fetching" ? "Fetching Remotes" : phase === "checking" ? "Checking Status" : "Repository Status";
+  const phaseLabel =
+    phase === "fetching"
+      ? "Fetching Remotes"
+      : phase === "checking"
+        ? "Checking Status"
+        : "Repository Status";
   const duration = Math.round((Date.now() - startTime) / 1000);
 
   if (phase === "finding") {
@@ -189,8 +220,13 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
     return (
       <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
-          <Text bold color="cyan">{phaseLabel}</Text>
-          <Text dimColor> · {repoCount} repos · parallel: {parallel}</Text>
+          <Text bold color="cyan">
+            {phaseLabel}
+          </Text>
+          <Text dimColor>
+            {" "}
+            · {repoCount} repos · parallel: {parallel}
+          </Text>
         </Box>
 
         <Box marginBottom={1}>
@@ -207,13 +243,17 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
               <Spinner type="dots" />
             </Text>
             <Box marginLeft={1}>
-              <Text color="yellow">Cancelling... waiting for in-progress operations to finish</Text>
+              <Text color="yellow">
+                Cancelling... waiting for in-progress operations to finish
+              </Text>
             </Box>
           </Box>
         ) : (
-          <Box marginTop={1}>
-            <Text dimColor>Esc Cancel</Text>
-          </Box>
+          isInteractive() && (
+            <Box marginTop={1}>
+              <Text dimColor>Esc Cancel</Text>
+            </Box>
+          )
         )}
 
         {fetchErrors.length > 0 && (
@@ -227,14 +267,23 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
   }
 
   if (phase === "cancelled") {
-    const cleanRepos = repos.filter(r => r.isClean && r.ahead === 0 && r.behind === 0);
-    const dirtyRepos = repos.filter(r => !r.isClean || r.ahead > 0 || r.behind > 0);
+    const cleanRepos = repos.filter(
+      (r) => r.isClean && r.ahead === 0 && r.behind === 0,
+    );
+    const dirtyRepos = repos.filter(
+      (r) => !r.isClean || r.ahead > 0 || r.behind > 0,
+    );
 
     return (
       <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
-          <Text bold color="cyan">Repository Status</Text>
-          <Text dimColor> · {repoCount} repos · parallel: {parallel}</Text>
+          <Text bold color="cyan">
+            Repository Status
+          </Text>
+          <Text dimColor>
+            {" "}
+            · {repoCount} repos · parallel: {parallel}
+          </Text>
         </Box>
 
         {fetchErrors.length > 0 && (
@@ -256,18 +305,31 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
             <SummaryRow label="Clean" value={cleanRepos.length} color="green" />
           )}
           {dirtyRepos.length > 0 && (
-            <SummaryRow label="With changes" value={dirtyRepos.length} color="yellow" />
+            <SummaryRow
+              label="With changes"
+              value={dirtyRepos.length}
+              color="yellow"
+            />
           )}
           {fetchErrors.length > 0 && (
-            <SummaryRow label="Fetch errors" value={fetchErrors.length} color="red" />
+            <SummaryRow
+              label="Fetch errors"
+              value={fetchErrors.length}
+              color="red"
+            />
           )}
-          <SummaryRow label="Not processed" value={repoCount - repos.length} color="yellow" />
+          <SummaryRow
+            label="Not processed"
+            value={repoCount - repos.length}
+            color="yellow"
+          />
           <SummaryRow label="Duration" value={`${duration}s`} dimColor />
         </Summary>
 
         <Box marginTop={1}>
           <Text color="yellow">
-            Operation cancelled. {repos.length} of {repoCount} repositories checked.
+            Operation cancelled. {repos.length} of {repoCount} repositories
+            checked.
           </Text>
         </Box>
 
@@ -285,20 +347,29 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
     );
   }
 
-  const cleanRepos = repos.filter(r => r.isClean && r.ahead === 0 && r.behind === 0);
-  const dirtyRepos = repos.filter(r => !r.isClean || r.ahead > 0 || r.behind > 0);
-  const aheadRepos = repos.filter(r => r.ahead > 0);
-  const behindRepos = repos.filter(r => r.behind > 0);
+  const cleanRepos = repos.filter(
+    (r) => r.isClean && r.ahead === 0 && r.behind === 0,
+  );
+  const dirtyRepos = repos.filter(
+    (r) => !r.isClean || r.ahead > 0 || r.behind > 0,
+  );
+  const aheadRepos = repos.filter((r) => r.ahead > 0);
+  const behindRepos = repos.filter((r) => r.behind > 0);
 
   if (options.quiet) {
     if (dirtyRepos.length === 0) {
       return (
         <Box flexDirection="column" padding={1}>
           <Box marginBottom={1}>
-            <Text bold color="cyan">Repository Status</Text>
-            <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
+            <Text bold color="cyan">
+              Repository Status
+            </Text>
+            <Text dimColor>
+              {" "}
+              · {repos.length} repos · parallel: {parallel}
+            </Text>
           </Box>
-          
+
           <Text color="green">✓ All {repos.length} repositories are clean</Text>
 
           <Summary>
@@ -315,8 +386,13 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
     return (
       <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
-          <Text bold color="cyan">Repository Status</Text>
-          <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
+          <Text bold color="cyan">
+            Repository Status
+          </Text>
+          <Text dimColor>
+            {" "}
+            · {repos.length} repos · parallel: {parallel}
+          </Text>
         </Box>
 
         {fetchErrors.length > 0 && (
@@ -329,10 +405,18 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
           <SummaryRow label="Repositories checked" value={repos.length} />
           <SummaryRow label="Clean" value={cleanRepos.length} color="green" />
           {dirtyRepos.length > 0 && (
-            <SummaryRow label="With changes" value={dirtyRepos.length} color="yellow" />
+            <SummaryRow
+              label="With changes"
+              value={dirtyRepos.length}
+              color="yellow"
+            />
           )}
           {fetchErrors.length > 0 && (
-            <SummaryRow label="Fetch errors" value={fetchErrors.length} color="red" />
+            <SummaryRow
+              label="Fetch errors"
+              value={fetchErrors.length}
+              color="red"
+            />
           )}
           <SummaryRow label="Duration" value={`${duration}s`} dimColor />
         </Summary>
@@ -346,26 +430,43 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
     return (
       <Box flexDirection="column" padding={1}>
         <Box marginBottom={1}>
-          <Text bold color="cyan">Repository Status Summary</Text>
-          <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
+          <Text bold color="cyan">
+            Repository Status Summary
+          </Text>
+          <Text dimColor>
+            {" "}
+            · {repos.length} repos · parallel: {parallel}
+          </Text>
         </Box>
-        
+
         <StatusSummary repos={repos} />
 
         <Summary>
           <SummaryRow label="Repositories checked" value={repos.length} />
           <SummaryRow label="Clean" value={cleanRepos.length} color="green" />
           {dirtyRepos.length > 0 && (
-            <SummaryRow label="With changes" value={dirtyRepos.length} color="yellow" />
+            <SummaryRow
+              label="With changes"
+              value={dirtyRepos.length}
+              color="yellow"
+            />
           )}
           {aheadRepos.length > 0 && (
             <SummaryRow label="Ahead" value={aheadRepos.length} color="cyan" />
           )}
           {behindRepos.length > 0 && (
-            <SummaryRow label="Behind" value={behindRepos.length} color="magenta" />
+            <SummaryRow
+              label="Behind"
+              value={behindRepos.length}
+              color="magenta"
+            />
           )}
           {fetchErrors.length > 0 && (
-            <SummaryRow label="Fetch errors" value={fetchErrors.length} color="red" />
+            <SummaryRow
+              label="Fetch errors"
+              value={fetchErrors.length}
+              color="red"
+            />
           )}
           <SummaryRow label="Duration" value={`${duration}s`} dimColor />
         </Summary>
@@ -378,8 +479,13 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
-        <Text bold color="cyan">Repository Status</Text>
-        <Text dimColor> · {repos.length} repos · parallel: {parallel}</Text>
+        <Text bold color="cyan">
+          Repository Status
+        </Text>
+        <Text dimColor>
+          {" "}
+          · {repos.length} repos · parallel: {parallel}
+        </Text>
       </Box>
 
       {fetchErrors.length > 0 && (
@@ -394,16 +500,28 @@ export function StatusApp({ options, onComplete }: StatusAppProps) {
         <SummaryRow label="Repositories checked" value={repos.length} />
         <SummaryRow label="Clean" value={cleanRepos.length} color="green" />
         {dirtyRepos.length > 0 && (
-          <SummaryRow label="With changes" value={dirtyRepos.length} color="yellow" />
+          <SummaryRow
+            label="With changes"
+            value={dirtyRepos.length}
+            color="yellow"
+          />
         )}
         {aheadRepos.length > 0 && (
           <SummaryRow label="Ahead" value={aheadRepos.length} color="cyan" />
         )}
         {behindRepos.length > 0 && (
-          <SummaryRow label="Behind" value={behindRepos.length} color="magenta" />
+          <SummaryRow
+            label="Behind"
+            value={behindRepos.length}
+            color="magenta"
+          />
         )}
         {fetchErrors.length > 0 && (
-          <SummaryRow label="Fetch errors" value={fetchErrors.length} color="red" />
+          <SummaryRow
+            label="Fetch errors"
+            value={fetchErrors.length}
+            color="red"
+          />
         )}
         <SummaryRow label="Duration" value={`${duration}s`} dimColor />
       </Summary>
@@ -417,4 +535,3 @@ export async function runStatus(options: StatusOptions): Promise<void> {
   const { waitUntilExit } = render(<StatusApp options={options} />);
   await waitUntilExit();
 }
-

@@ -9,6 +9,7 @@ import {
   getConfigValue,
   setConfigValue,
 } from "../lib/config.js";
+import { isInteractive } from "../lib/tty.js";
 import type { ConfigOptions, ReposConfig } from "../types.js";
 
 interface ConfigAppProps {
@@ -29,7 +30,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
         onComplete?.();
       }
     },
-    { isActive: !!onComplete },
+    { isActive: !!onComplete && isInteractive() },
   );
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
             setMessage(
               typeof value === "object"
                 ? JSON.stringify(value, null, 2)
-                : String(value)
+                : String(value),
             );
           }
           setIsDone(true);
@@ -69,15 +70,20 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
           let parsedValue: unknown = options.value;
           try {
             parsedValue = JSON.parse(options.value);
-          } catch {
-          }
+          } catch {}
 
-          const newConfig = setConfigValue(currentConfig, options.set, parsedValue);
+          const newConfig = setConfigValue(
+            currentConfig,
+            options.set,
+            parsedValue,
+          );
           const location = options.location || "cwd";
           await saveConfig(newConfig, location);
-          
+
           setConfig(newConfig);
-          setConfigPath(location === "cwd" ? getCwdConfigPath() : getHomeConfigPath());
+          setConfigPath(
+            location === "cwd" ? getCwdConfigPath() : getHomeConfigPath(),
+          );
           setMessage(`Set ${options.set} = ${options.value}`);
           setIsDone(true);
           return;
@@ -110,9 +116,7 @@ export function ConfigApp({ options, onComplete }: ConfigAppProps) {
     return (
       <Box flexDirection="column" padding={1}>
         <Text color="green">{message}</Text>
-        {configPath && (
-          <Text dimColor>Config file: {configPath}</Text>
-        )}
+        {configPath && <Text dimColor>Config file: {configPath}</Text>}
         {onComplete && (
           <Box marginTop={1}>
             <Text dimColor>⌫/Esc Back</Text>
@@ -189,4 +193,3 @@ export async function runConfig(options: ConfigOptions): Promise<void> {
   const { waitUntilExit } = render(<ConfigApp options={options} />);
   await waitUntilExit();
 }
-

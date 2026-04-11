@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Box, Text, useInput, useApp, useStdout } from "ink";
+import { isInteractive } from "../lib/tty.js";
 
 export interface MenuItem {
   label: string;
@@ -44,35 +45,38 @@ export function GroupedMenu({ groups, onSelect }: GroupedMenuProps) {
   const getGroupStartIndex = (groupIdx: number) =>
     groups.slice(0, groupIdx).reduce((sum, g) => sum + g.items.length, 0);
 
-  useInput((input, key) => {
-    if (input === "q") {
-      exit();
-      return;
-    }
-
-    if (key.upArrow || input === "k") {
-      setSelectedIndex((i) => (i > 0 ? i - 1 : totalItems - 1));
-    } else if (key.downArrow || input === "j") {
-      setSelectedIndex((i) => (i < totalItems - 1 ? i + 1 : 0));
-    } else if (key.leftArrow || input === "h") {
-      const curr = getGroupIndex(selectedIndex);
-      const prev = curr > 0 ? curr - 1 : groups.length - 1;
-      setSelectedIndex(getGroupStartIndex(prev));
-    } else if (key.rightArrow || input === "l") {
-      const curr = getGroupIndex(selectedIndex);
-      const next = curr < groups.length - 1 ? curr + 1 : 0;
-      setSelectedIndex(getGroupStartIndex(next));
-    } else if (key.return) {
-      onSelect(selectableItems[selectedIndex]);
-    } else {
-      const item = selectableItems.find(
-        (i) => i.key?.toLowerCase() === input.toLowerCase()
-      );
-      if (item) {
-        onSelect(item);
+  useInput(
+    (input, key) => {
+      if (input === "q") {
+        exit();
+        return;
       }
-    }
-  });
+
+      if (key.upArrow || input === "k") {
+        setSelectedIndex((i) => (i > 0 ? i - 1 : totalItems - 1));
+      } else if (key.downArrow || input === "j") {
+        setSelectedIndex((i) => (i < totalItems - 1 ? i + 1 : 0));
+      } else if (key.leftArrow || input === "h") {
+        const curr = getGroupIndex(selectedIndex);
+        const prev = curr > 0 ? curr - 1 : groups.length - 1;
+        setSelectedIndex(getGroupStartIndex(prev));
+      } else if (key.rightArrow || input === "l") {
+        const curr = getGroupIndex(selectedIndex);
+        const next = curr < groups.length - 1 ? curr + 1 : 0;
+        setSelectedIndex(getGroupStartIndex(next));
+      } else if (key.return) {
+        onSelect(selectableItems[selectedIndex]);
+      } else {
+        const item = selectableItems.find(
+          (i) => i.key?.toLowerCase() === input.toLowerCase(),
+        );
+        if (item) {
+          onSelect(item);
+        }
+      }
+    },
+    { isActive: isInteractive() },
+  );
 
   // Track index across columns to maintain correct selection mapping
   let globalIndex = 0;
@@ -93,7 +97,7 @@ export function GroupedMenu({ groups, onSelect }: GroupedMenuProps) {
                   {isSelected ? "❯  " : "   "}
                 </Text>
                 <Text dimColor>{item.key ? `${item.key} ` : "  "}</Text>
-                <Text>{" "}</Text>
+                <Text> </Text>
                 <Text color={isSelected ? "cyan" : undefined} bold={isSelected}>
                   {item.label}
                 </Text>
@@ -129,7 +133,11 @@ export function GroupedMenu({ groups, onSelect }: GroupedMenuProps) {
       <Box flexDirection="column">
         <Box flexDirection="row" gap={2}>
           {groups.map((group) => (
-            <Box key={group.category} flexDirection="column" width={columnWidth}>
+            <Box
+              key={group.category}
+              flexDirection="column"
+              width={columnWidth}
+            >
               {renderGroup(group)}
             </Box>
           ))}
