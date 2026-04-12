@@ -11,6 +11,7 @@ import {
   findRepos,
   filterRepos,
   runParallel,
+  getRepoName,
   getAllRepoStatuses,
 } from "./repos.js";
 import {
@@ -23,6 +24,7 @@ import {
   execInRepo,
   type FetchRepoOptions,
 } from "./git.js";
+import { formatSync } from "./format.js";
 import type {
   StatusOptions,
   FetchOptions,
@@ -32,7 +34,7 @@ import type {
   ExecOptions,
   CleanupOptions,
   ConfigOptions,
-  RepoStatus,
+  ReposConfig,
   RepoOperationResult,
 } from "../types.js";
 import { DEFAULT_CONFIG } from "../types.js";
@@ -43,15 +45,6 @@ function pad(str: string, width: number): string {
   return str.length >= width
     ? str.slice(0, width)
     : str + " ".repeat(width - str.length);
-}
-
-function formatSync(status: RepoStatus): string {
-  if (!status.hasUpstream) return "—";
-  if (status.ahead === 0 && status.behind === 0) return "✓";
-  const parts: string[] = [];
-  if (status.ahead > 0) parts.push(`↑${status.ahead}`);
-  if (status.behind > 0) parts.push(`↓${status.behind}`);
-  return parts.join(" ");
 }
 
 async function resolveRepos(
@@ -74,16 +67,21 @@ async function resolveRepos(
   return repoPaths;
 }
 
-function repoName(repoPath: string): string {
-  return repoPath.split("/").pop() || repoPath;
+async function setupOperation(options: {
+  basePath?: string;
+  filter?: string;
+  parallel?: number;
+}): Promise<{ repoPaths: string[]; config: ReposConfig; concurrency: number }> {
+  const repoPaths = await resolveRepos(options.basePath, options.filter);
+  const config = await loadConfig();
+  const concurrency = options.parallel ?? config.parallel ?? 10;
+  return { repoPaths, config, concurrency };
 }
 
 // ── Status ───────────────────────────────────────────────────────
 
 export async function ciStatus(options: StatusOptions): Promise<void> {
-  const repoPaths = await resolveRepos(options.basePath, options.filter);
-  const config = await loadConfig();
-  const concurrency = config.parallel ?? 10;
+  const { repoPaths, concurrency } = await setupOperation(options);
 
   if (options.fetch) {
     await runParallel(repoPaths, (rp) => fetchRepo(rp), concurrency);
@@ -156,14 +154,12 @@ export async function ciStatus(options: StatusOptions): Promise<void> {
 // ── Fetch ────────────────────────────────────────────────────────
 
 export async function ciFetch(options: FetchOptions): Promise<void> {
-  const repoPaths = await resolveRepos(options.basePath, options.filter);
-  const config = await loadConfig();
-  const concurrency = options.parallel ?? config.parallel ?? 10;
+  const { repoPaths, concurrency } = await setupOperation(options);
 
   if (options.dryRun) {
     console.log(`Would fetch ${repoPaths.length} repositories`);
     for (const rp of repoPaths) {
-      console.log(`  ${repoName(rp)}`);
+      console.log(`  ${getRepoName(rp)}`);
     }
     return;
   }
@@ -197,9 +193,7 @@ export async function ciFetch(options: FetchOptions): Promise<void> {
 // ── Pull ─────────────────────────────────────────────────────────
 
 export async function ciPull(options: UpdateOptions): Promise<void> {
-  const repoPaths = await resolveRepos(options.basePath, options.filter);
-  const config = await loadConfig();
-  const concurrency = options.parallel ?? config.parallel ?? 10;
+  const { repoPaths, concurrency } = await setupOperation(options);
 
   if (options.dryRun) {
     // Fetch first to check what's behind
@@ -268,10 +262,7 @@ export async function ciPull(options: UpdateOptions): Promise<void> {
 // ── Diff ─────────────────────────────────────────────────────────
 
 export async function ciDiff(options: DiffOptions): Promise<void> {
-  const repoPaths = await resolveRepos(options.basePath, options.filter);
-  const config = await loadConfig();
-  const concurrency =
-    options.parallel ?? config.parallel ?? DEFAULT_CONFIG.parallel;
+  const { repoPaths, config, concurrency } = await setupOperation(options);
   const maxLines =
     options.maxLines ?? config.diffMaxLines ?? DEFAULT_CONFIG.diffMaxLines;
 
@@ -315,14 +306,12 @@ export async function ciDiff(options: DiffOptions): Promise<void> {
 // ── Checkout ─────────────────────────────────────────────────────
 
 export async function ciCheckout(options: CheckoutOptions): Promise<void> {
-  const repoPaths = await resolveRepos(options.basePath, options.filter);
-  const config = await loadConfig();
-  const concurrency = options.parallel ?? config.parallel ?? 10;
+  const { repoPaths, concurrency } = await setupOperation(options);
 
   const { results } = await runParallel(
     repoPaths,
     async (rp) => {
-      const name = repoName(rp);
+      const name = getRepoName(rp);
       if (!options.force) {
         const status = await getRepoStatus(rp);
         if (status.modified > 0 || status.staged > 0) {
@@ -365,9 +354,7 @@ export async function ciCheckout(options: CheckoutOptions): Promise<void> {
 // ── Exec ─────────────────────────────────────────────────────────
 
 export async function ciExec(options: ExecOptions): Promise<void> {
-  const repoPaths = await resolveRepos(options.basePath, options.filter);
-  const config = await loadConfig();
-  const concurrency = options.parallel ?? config.parallel ?? 10;
+  const { repoPaths, concurrency } = await setupOperation(options);
 
   const { results } = await runParallel(
     repoPaths,

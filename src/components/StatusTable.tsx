@@ -1,20 +1,11 @@
 import { Box, Text } from "ink";
 import type { RepoStatus } from "../types.js";
+import { formatSync } from "../lib/format.js";
 import { Divider } from "./Divider.js";
 
 interface StatusTableProps {
   repos: RepoStatus[];
   showClean?: boolean;
-}
-
-function formatSync(status: RepoStatus): string {
-  if (!status.hasUpstream) return "—";
-  if (status.ahead === 0 && status.behind === 0) return "✓";
-
-  const parts: string[] = [];
-  if (status.ahead > 0) parts.push(`↑${status.ahead}`);
-  if (status.behind > 0) parts.push(`↓${status.behind}`);
-  return parts.join(" ");
 }
 
 function getSyncColor(status: RepoStatus): string | undefined {
@@ -32,22 +23,34 @@ function TableHeader() {
   return (
     <Box>
       <Box width={28}>
-        <Text bold color="cyan">Repository</Text>
+        <Text bold color="cyan">
+          Repository
+        </Text>
       </Box>
       <Box width={14}>
-        <Text bold color="cyan">Branch</Text>
+        <Text bold color="cyan">
+          Branch
+        </Text>
       </Box>
       <Box width={10}>
-        <Text bold color="cyan">Modified</Text>
+        <Text bold color="cyan">
+          Modified
+        </Text>
       </Box>
       <Box width={8}>
-        <Text bold color="cyan">Staged</Text>
+        <Text bold color="cyan">
+          Staged
+        </Text>
       </Box>
       <Box width={11}>
-        <Text bold color="cyan">Untracked</Text>
+        <Text bold color="cyan">
+          Untracked
+        </Text>
       </Box>
       <Box width={8}>
-        <Text bold color="cyan">Sync</Text>
+        <Text bold color="cyan">
+          Sync
+        </Text>
       </Box>
     </Box>
   );
@@ -75,22 +78,33 @@ function TableRow({ status }: { status: RepoStatus }) {
         </Text>
       </Box>
       <Box width={10}>
-        <Text color={status.modified > 0 ? "yellow" : undefined} dimColor={status.modified === 0}>
+        <Text
+          color={status.modified > 0 ? "yellow" : undefined}
+          dimColor={status.modified === 0}
+        >
           {status.modified}
         </Text>
       </Box>
       <Box width={8}>
-        <Text color={status.staged > 0 ? "green" : undefined} dimColor={status.staged === 0}>
+        <Text
+          color={status.staged > 0 ? "green" : undefined}
+          dimColor={status.staged === 0}
+        >
           {status.staged}
         </Text>
       </Box>
       <Box width={11}>
-        <Text color={status.untracked > 0 ? "blue" : undefined} dimColor={status.untracked === 0}>
+        <Text
+          color={status.untracked > 0 ? "blue" : undefined}
+          dimColor={status.untracked === 0}
+        >
           {status.untracked}
         </Text>
       </Box>
       <Box width={8}>
-        <Text color={getSyncColor(status)} dimColor={shouldDimSync(status)}>{formatSync(status)}</Text>
+        <Text color={getSyncColor(status)} dimColor={shouldDimSync(status)}>
+          {formatSync(status)}
+        </Text>
       </Box>
     </Box>
   );
@@ -162,4 +176,3 @@ export function StatusSummary({ repos }: SummaryProps) {
     </Box>
   );
 }
-
