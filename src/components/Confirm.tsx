@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { isInteractive } from "../lib/tty.js";
 
 interface ConfirmProps {
   message: string;
@@ -18,21 +19,24 @@ export function Confirm({
 }: ConfirmProps) {
   const [selected, setSelected] = useState(defaultValue);
 
-  useInput((input, key) => {
-    if (key.leftArrow || input === "y" || input === "Y") {
-      setSelected(true);
-    } else if (key.rightArrow || input === "n" || input === "N") {
-      setSelected(false);
-    } else if (key.return) {
-      if (selected) {
-        onConfirm();
-      } else {
+  useInput(
+    (input, key) => {
+      if (key.leftArrow || input === "y" || input === "Y") {
+        setSelected(true);
+      } else if (key.rightArrow || input === "n" || input === "N") {
+        setSelected(false);
+      } else if (key.return) {
+        if (selected) {
+          onConfirm();
+        } else {
+          onCancel();
+        }
+      } else if (key.escape) {
         onCancel();
       }
-    } else if (key.escape) {
-      onCancel();
-    }
-  });
+    },
+    { isActive: isInteractive() },
+  );
 
   return (
     <Box flexDirection="column">
@@ -80,19 +84,22 @@ export function TypeConfirm({
 }: TypeConfirmProps) {
   const [input, setInput] = useState("");
 
-  useInput((char, key) => {
-    if (key.escape) {
-      onCancel();
-    } else if (key.return) {
-      if (input === confirmText) {
-        onConfirm();
+  useInput(
+    (char, key) => {
+      if (key.escape) {
+        onCancel();
+      } else if (key.return) {
+        if (input === confirmText) {
+          onConfirm();
+        }
+      } else if (key.backspace || key.delete) {
+        setInput((prev) => prev.slice(0, -1));
+      } else if (char && !key.ctrl && !key.meta) {
+        setInput((prev) => prev + char);
       }
-    } else if (key.backspace || key.delete) {
-      setInput((prev) => prev.slice(0, -1));
-    } else if (char && !key.ctrl && !key.meta) {
-      setInput((prev) => prev + char);
-    }
-  });
+    },
+    { isActive: isInteractive() },
+  );
 
   const isMatch = input === confirmText;
 
@@ -117,4 +124,3 @@ export function TypeConfirm({
     </Box>
   );
 }
-

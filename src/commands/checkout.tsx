@@ -4,6 +4,7 @@ import Spinner from "ink-spinner";
 import { findRepos, filterRepos } from "../lib/repos.js";
 import { checkoutBranch, getRepoStatus } from "../lib/git.js";
 import { loadConfig } from "../lib/config.js";
+import { isInteractive } from "../lib/tty.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { Divider } from "../components/Divider.js";
 import type { CheckoutOptions, RepoOperationResult } from "../types.js";
@@ -15,7 +16,10 @@ interface CheckoutAppProps {
 
 type Phase = "finding" | "checking" | "cancelling" | "done" | "cancelled";
 
-function getResultIcon(result: RepoOperationResult): { icon: string; color: string } {
+function getResultIcon(result: RepoOperationResult): {
+  icon: string;
+  color: string;
+} {
   if (result.success) {
     if (result.message === "created") {
       return { icon: "+", color: "green" };
@@ -40,19 +44,18 @@ function ResultRow({ result }: { result: RepoOperationResult }) {
         <Text color={color}>{icon}</Text>
       </Box>
       <Box width={28}>
-        <Text>{result.name.slice(0, 26)}{result.name.length > 26 ? "…" : ""}</Text>
+        <Text>
+          {result.name.slice(0, 26)}
+          {result.name.length > 26 ? "…" : ""}
+        </Text>
       </Box>
       <Box width={16}>
         <Text color={result.success ? "green" : "yellow"}>
           {result.message}
         </Text>
       </Box>
-      {result.details && (
-        <Text dimColor>{result.details}</Text>
-      )}
-      {result.error && (
-        <Text dimColor>({result.error})</Text>
-      )}
+      {result.details && <Text dimColor>{result.details}</Text>}
+      {result.error && <Text dimColor>({result.error})</Text>}
     </Box>
   );
 }
@@ -170,18 +173,25 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
     runCheckout();
   }, [options]);
 
-  useInput((_, key) => {
-    if (key.escape) {
-      if (phase === "checking") {
-        cancelledRef.current = true;
-        setPhase("cancelling");
-      } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+  useInput(
+    (_, key) => {
+      if (key.escape) {
+        if (phase === "checking") {
+          cancelledRef.current = true;
+          setPhase("cancelling");
+        } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+          onComplete();
+        }
+      } else if (
+        key.delete &&
+        (phase === "done" || phase === "cancelled") &&
+        onComplete
+      ) {
         onComplete();
       }
-    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
-      onComplete();
-    }
-  });
+    },
+    { isActive: isInteractive() },
+  );
 
   if (error) {
     return (
@@ -218,7 +228,10 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
           <Text bold color="cyan">
             Checkout Branch: {options.branch}
           </Text>
-          <Text dimColor> • {repos.length} repos • parallel: {parallel}</Text>
+          <Text dimColor>
+            {" "}
+            • {repos.length} repos • parallel: {parallel}
+          </Text>
         </Box>
 
         <Box marginBottom={1}>
@@ -235,23 +248,33 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
               <Spinner type="dots" />
             </Text>
             <Box marginLeft={1}>
-              <Text color="yellow">Cancelling... waiting for in-progress operations to finish</Text>
+              <Text color="yellow">
+                Cancelling... waiting for in-progress operations to finish
+              </Text>
             </Box>
           </Box>
         ) : (
-          <Box marginTop={1}>
-            <Text dimColor>Esc Cancel</Text>
-          </Box>
+          isInteractive() && (
+            <Box marginTop={1}>
+              <Text dimColor>Esc Cancel</Text>
+            </Box>
+          )
         )}
       </Box>
     );
   }
 
-  const switched = results.filter(r => r.success && r.message === "switched").length;
-  const created = results.filter(r => r.success && r.message === "created").length;
-  const skipped = results.filter(r => r.message === "skipped").length;
-  const notFound = results.filter(r => r.message === "not found").length;
-  const errors = results.filter(r => !r.success && r.message !== "skipped" && r.message !== "not found").length;
+  const switched = results.filter(
+    (r) => r.success && r.message === "switched",
+  ).length;
+  const created = results.filter(
+    (r) => r.success && r.message === "created",
+  ).length;
+  const skipped = results.filter((r) => r.message === "skipped").length;
+  const notFound = results.filter((r) => r.message === "not found").length;
+  const errors = results.filter(
+    (r) => !r.success && r.message !== "skipped" && r.message !== "not found",
+  ).length;
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -259,12 +282,15 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
         <Text bold color="cyan">
           Checkout Branch: {options.branch}
         </Text>
-        <Text dimColor> • {repos.length} repos • parallel: {parallel}</Text>
+        <Text dimColor>
+          {" "}
+          • {repos.length} repos • parallel: {parallel}
+        </Text>
         {options.create && <Text dimColor> • create if missing</Text>}
       </Box>
 
       <Box flexDirection="column" marginBottom={1}>
-        {results.map(r => (
+        {results.map((r) => (
           <ResultRow key={r.name} result={r} />
         ))}
       </Box>
@@ -339,7 +365,8 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
       {phase === "cancelled" && (
         <Box marginTop={1}>
           <Text color="yellow">
-            Operation cancelled. {results.length} of {repos.length} repositories processed.
+            Operation cancelled. {results.length} of {repos.length} repositories
+            processed.
           </Text>
         </Box>
       )}
@@ -347,7 +374,8 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
       {notFound > 0 && !options.create && phase !== "cancelled" && (
         <Box marginTop={1}>
           <Text color="yellow">
-            Tip: Use --create (-b) to create the branch in repos where it doesn't exist.
+            Tip: Use --create (-b) to create the branch in repos where it
+            doesn't exist.
           </Text>
         </Box>
       )}
@@ -362,6 +390,11 @@ export function CheckoutApp({ options, onComplete }: CheckoutAppProps) {
 }
 
 export async function runCheckout(options: CheckoutOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciCheckout } = await import("../lib/ci.js");
+    await ciCheckout(options);
+    return;
+  }
   const { waitUntilExit } = render(<CheckoutApp options={options} />);
   await waitUntilExit();
 }

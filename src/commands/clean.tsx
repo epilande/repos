@@ -3,18 +3,34 @@ import { render, Box, Text, useInput } from "ink";
 import Spinner from "ink-spinner";
 import { findRepos, filterRepos, getAllRepoStatuses } from "../lib/repos.js";
 import { cleanRepo } from "../lib/git.js";
+import { isInteractive } from "../lib/tty.js";
 import { Confirm } from "../components/Confirm.js";
 import { ProgressBar } from "../components/ProgressBar.js";
-import { RepoList, ResultList, OperationStats } from "../components/RepoList.js";
+import {
+  RepoList,
+  ResultList,
+  OperationStats,
+} from "../components/RepoList.js";
 import { Divider } from "../components/Divider.js";
-import type { CleanupOptions, RepoStatus, RepoOperationResult } from "../types.js";
+import type {
+  CleanupOptions,
+  RepoStatus,
+  RepoOperationResult,
+} from "../types.js";
 
 interface CleanAppProps {
   options: CleanupOptions;
   onComplete?: () => void;
 }
 
-type Phase = "finding" | "confirming" | "cleaning" | "cancelling" | "done" | "confirmLiveRun" | "cancelled";
+type Phase =
+  | "finding"
+  | "confirming"
+  | "cleaning"
+  | "cancelling"
+  | "done"
+  | "confirmLiveRun"
+  | "cancelled";
 
 export function CleanApp({ options, onComplete }: CleanAppProps) {
   const [phase, setPhase] = useState<Phase>("finding");
@@ -28,7 +44,11 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    if (dirtyRepos.length > 0 && !isDryRun && (phase === "confirming" || phase === "cleaning")) {
+    if (
+      dirtyRepos.length > 0 &&
+      !isDryRun &&
+      (phase === "confirming" || phase === "cleaning")
+    ) {
       return;
     }
 
@@ -75,6 +95,11 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
           }
         } else if (options.force) {
           setPhase("cleaning");
+        } else if (!isInteractive()) {
+          setError(
+            "Cannot confirm destructive operation in non-interactive mode. Use --force to skip confirmation or --dry-run to preview.",
+          );
+          setPhase("done");
         } else {
           setPhase("confirming");
         }
@@ -154,18 +179,25 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
     }
   }, [phase, onComplete]);
 
-  useInput((input, key) => {
-    if (key.escape) {
-      if (phase === "cleaning") {
-        cancelledRef.current = true;
-        setPhase("cancelling");
-      } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        if (phase === "cleaning") {
+          cancelledRef.current = true;
+          setPhase("cancelling");
+        } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+          onComplete();
+        }
+      } else if (
+        key.delete &&
+        (phase === "done" || phase === "cancelled") &&
+        onComplete
+      ) {
         onComplete();
       }
-    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
-      onComplete();
-    }
-  });
+    },
+    { isActive: isInteractive() },
+  );
 
   if (error) {
     return (
@@ -270,8 +302,12 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
     const repoNames = dirtyRepos.map((r) => r.name);
     const totalChanges = dirtyRepos.reduce(
       (sum, r) =>
-        sum + r.modified + r.staged + r.deleted + (options.all ? r.untracked : 0),
-      0
+        sum +
+        r.modified +
+        r.staged +
+        r.deleted +
+        (options.all ? r.untracked : 0),
+      0,
     );
 
     return (
@@ -289,9 +325,7 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
         <Box marginY={1} paddingLeft={2}>
           <RepoList repos={repoNames} maxShow={10} />
         </Box>
-        <Text dimColor>
-          Total files affected: ~{totalChanges}
-        </Text>
+        <Text dimColor>Total files affected: ~{totalChanges}</Text>
         <Box marginTop={1}>
           <Confirm
             message="Are you sure you want to proceed?"
@@ -331,21 +365,36 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
                 <Spinner type="dots" />
               </Text>
               <Box marginLeft={1}>
-                <Text color="yellow">Cancelling... waiting for in-progress operations to finish</Text>
+                <Text color="yellow">
+                  Cancelling... waiting for in-progress operations to finish
+                </Text>
               </Box>
             </Box>
           ) : (
-            <Box marginTop={1}>
-              <Text dimColor>Esc Cancel</Text>
-            </Box>
+            isInteractive() && (
+              <Box marginTop={1}>
+                <Text dimColor>Esc Cancel</Text>
+              </Box>
+            )
           )}
         </>
       )}
 
       {results.length > 0 && (
         <Box flexDirection="column" marginBottom={1}>
-          {(phase === "cleaning" || phase === "cancelling") && <Divider marginTop={1} marginBottom={1} />}
-          <ResultList results={results} maxShow={phase === "done" || phase === "cancelled" || phase === "cancelling" ? 50 : 10} />
+          {(phase === "cleaning" || phase === "cancelling") && (
+            <Divider marginTop={1} marginBottom={1} />
+          )}
+          <ResultList
+            results={results}
+            maxShow={
+              phase === "done" ||
+              phase === "cancelled" ||
+              phase === "cancelling"
+                ? 50
+                : 10
+            }
+          />
         </Box>
       )}
 
@@ -355,14 +404,17 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
             total={dirtyRepos.length}
             successful={successful}
             failed={failed}
-            skipped={phase === "cancelled" ? dirtyRepos.length - results.length : 0}
+            skipped={
+              phase === "cancelled" ? dirtyRepos.length - results.length : 0
+            }
             duration={duration}
             operation="cleaned"
           />
           {phase === "cancelled" && (
             <Box marginTop={1}>
               <Text color="yellow">
-                Operation cancelled. {results.length} of {dirtyRepos.length} repositories processed.
+                Operation cancelled. {results.length} of {dirtyRepos.length}{" "}
+                repositories processed.
               </Text>
             </Box>
           )}
@@ -378,7 +430,11 @@ export function CleanApp({ options, onComplete }: CleanAppProps) {
 }
 
 export async function runClean(options: CleanupOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciClean } = await import("../lib/ci.js");
+    await ciClean(options);
+    return;
+  }
   const { waitUntilExit } = render(<CleanApp options={options} />);
   await waitUntilExit();
 }
-

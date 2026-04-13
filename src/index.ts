@@ -13,13 +13,14 @@ import { runFetch } from "./commands/fetch.js";
 import { runDiff } from "./commands/diff.js";
 import { runCheckout } from "./commands/checkout.js";
 import { runExec } from "./commands/exec.js";
+import { isInteractive } from "./lib/tty.js";
 import packageJson from "../package.json";
 
 const VERSION = packageJson.version;
 
 function showDeprecationWarning(oldName: string, newName: string) {
   console.warn(
-    `\x1b[33mWarning: 'repos ${oldName}' is deprecated. Use 'repos ${newName}' instead.\x1b[0m\n`
+    `\x1b[33mWarning: 'repos ${oldName}' is deprecated. Use 'repos ${newName}' instead.\x1b[0m\n`,
   );
 }
 
@@ -29,6 +30,12 @@ program
   .version(VERSION);
 
 program.action(async () => {
+  if (!isInteractive()) {
+    console.error(
+      "Interactive mode requires a TTY. Run 'repos --help' for available commands.",
+    );
+    process.exit(1);
+  }
   const { waitUntilExit } = render(React.createElement(App));
   await waitUntilExit();
   process.exit(0);
@@ -96,7 +103,9 @@ program
 
 program
   .command("update")
-  .description("(Deprecated: use 'pull') Pull latest changes for all repositories")
+  .description(
+    "(Deprecated: use 'pull') Pull latest changes for all repositories",
+  )
   .option("-n, --dry-run", "Show what would be updated without pulling")
   .option("-q, --quiet", "Minimal output")
   .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
@@ -118,7 +127,11 @@ program
   .option("-o, --org <name>", "GitHub organization or username")
   .option("-h, --host <host>", "GitHub host (default: github.com)")
   .option("-d, --days <number>", "Activity threshold in days", parseInt)
-  .option("-p, --parallel <number>", "Number of parallel clone operations (default: 10)", parseInt)
+  .option(
+    "-p, --parallel <number>",
+    "Number of parallel clone operations (default: 10)",
+    parseInt,
+  )
   .option("-s, --shallow", "Shallow clone (faster, uses less disk space)")
   .action(async (options) => {
     await runClone({
@@ -149,7 +162,9 @@ program
 
 program
   .command("cleanup")
-  .description("(Deprecated: use 'clean') Clean repositories by reverting changes")
+  .description(
+    "(Deprecated: use 'clean') Clean repositories by reverting changes",
+  )
   .option("-n, --dry-run", "Show what would be cleaned without cleaning")
   .option("-f, --force", "Skip confirmation prompt")
   .option("-a, --all", "Also remove untracked files")
@@ -171,7 +186,11 @@ program
   .option("--stat", "Show diffstat summary instead of full diff")
   .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
   .option("-p, --parallel <number>", "Number of parallel operations", parseInt)
-  .option("-m, --max-lines <number>", "Max lines per diff (default: 500, 0 for unlimited)", parseInt)
+  .option(
+    "-m, --max-lines <number>",
+    "Max lines per diff (default: 500, 0 for unlimited)",
+    parseInt,
+  )
   .action(async (options) => {
     await runDiff({
       quiet: options.quiet,
@@ -233,4 +252,3 @@ program
   });
 
 program.parse();
-

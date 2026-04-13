@@ -9,11 +9,8 @@ import {
   getCwdConfigPath,
   getHomeConfigPath,
 } from "../lib/config.js";
-import {
-  checkGhCli,
-  detectGitHubHost,
-  getApiUrl,
-} from "../lib/github.js";
+import { checkGhCli, detectGitHubHost, getApiUrl } from "../lib/github.js";
+import { isInteractive } from "../lib/tty.js";
 import type { ReposConfig, GitHubConfig } from "../types.js";
 
 type Step =
@@ -54,7 +51,13 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
         onComplete?.();
       }
     },
-    { isActive: !!onComplete && step !== "checking" && step !== "saving" },
+    {
+      isActive:
+        isInteractive() &&
+        !!onComplete &&
+        step !== "checking" &&
+        step !== "saving",
+    },
   );
 
   useEffect(() => {
@@ -67,7 +70,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
     async function check() {
       if (!force && (await configExists("any", basePath))) {
         setError(
-          "Configuration already exists. Use --force to overwrite or 'repos config' to view/edit."
+          "Configuration already exists. Use --force to overwrite or 'repos config' to view/edit.",
         );
         setStep("done");
         return;
@@ -234,7 +237,9 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           repos init - Setup Wizard
         </Text>
         <Box marginTop={1} flexDirection="column">
-          <Text>Enter GitHub Enterprise host (e.g., github.mycompany.com):</Text>
+          <Text>
+            Enter GitHub Enterprise host (e.g., github.mycompany.com):
+          </Text>
           <Box marginTop={1}>
             <Text color="cyan">{">"} </Text>
             <TextInput
@@ -250,9 +255,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text dimColor>
-            Enter Continue{onComplete && " • ⌫/Esc Back"}
-          </Text>
+          <Text dimColor>Enter Continue{onComplete && " • ⌫/Esc Back"}</Text>
         </Box>
       </Box>
     );
@@ -285,9 +288,7 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
           </Box>
         </Box>
         <Box marginTop={1}>
-          <Text dimColor>
-            Enter Continue{onComplete && " • ⌫/Esc Back"}
-          </Text>
+          <Text dimColor>Enter Continue{onComplete && " • ⌫/Esc Back"}</Text>
         </Box>
       </Box>
     );
@@ -425,7 +426,12 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 }
 
 export async function runInit(force?: boolean): Promise<void> {
+  if (!isInteractive()) {
+    console.error(
+      "`repos init` requires an interactive terminal. Run in a TTY to configure.",
+    );
+    process.exit(1);
+  }
   const { waitUntilExit } = render(<InitApp force={force} />);
   await waitUntilExit();
 }
-

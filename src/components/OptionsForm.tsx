@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { Box, Text, useInput } from "ink";
+import { isInteractive } from "../lib/tty.js";
 import TextInput from "ink-text-input";
 
 export type FieldType = "toggle" | "text" | "number";
@@ -17,7 +18,9 @@ export interface FormField {
 interface OptionsFormProps {
   title: string;
   fields: FormField[];
-  onSubmit: (values: Record<string, boolean | string | number | undefined>) => void;
+  onSubmit: (
+    values: Record<string, boolean | string | number | undefined>,
+  ) => void;
   onCancel: () => void;
   submitLabel?: string;
 }
@@ -29,7 +32,9 @@ export function OptionsForm({
   onCancel,
   submitLabel = "Start",
 }: OptionsFormProps) {
-  const [values, setValues] = useState<Record<string, boolean | string | number | undefined>>(() => {
+  const [values, setValues] = useState<
+    Record<string, boolean | string | number | undefined>
+  >(() => {
     const initial: Record<string, boolean | string | number | undefined> = {};
     for (const field of fields) {
       initial[field.name] = field.defaultValue;
@@ -89,7 +94,8 @@ export function OptionsForm({
       return;
     }
 
-    const finalValues: Record<string, boolean | string | number | undefined> = {};
+    const finalValues: Record<string, boolean | string | number | undefined> =
+      {};
     for (const field of fields) {
       const val = values[field.name];
       if (field.type === "number" && typeof val === "string") {
@@ -104,59 +110,62 @@ export function OptionsForm({
     onSubmit(finalValues);
   }, [fields, values, onSubmit, validateRequired]);
 
-  useInput((input, key) => {
-    if (!isEditing) {
-      if (key.upArrow || input === "k") {
-        setFocusIndex((prev) => (prev > 0 ? prev - 1 : totalItems - 1));
-        return;
-      }
-
-      if (key.downArrow || input === "j") {
-        setFocusIndex((prev) => (prev < totalItems - 1 ? prev + 1 : 0));
-        return;
-      }
-
-      if (key.tab) {
-        if (key.shift) {
+  useInput(
+    (input, key) => {
+      if (!isEditing) {
+        if (key.upArrow || input === "k") {
           setFocusIndex((prev) => (prev > 0 ? prev - 1 : totalItems - 1));
-        } else {
+          return;
+        }
+
+        if (key.downArrow || input === "j") {
           setFocusIndex((prev) => (prev < totalItems - 1 ? prev + 1 : 0));
+          return;
+        }
+
+        if (key.tab) {
+          if (key.shift) {
+            setFocusIndex((prev) => (prev > 0 ? prev - 1 : totalItems - 1));
+          } else {
+            setFocusIndex((prev) => (prev < totalItems - 1 ? prev + 1 : 0));
+          }
+          return;
+        }
+      }
+
+      if (key.escape) {
+        if (isEditing) {
+          setIsEditing(false);
+        } else {
+          onCancel();
         }
         return;
       }
-    }
 
-    if (key.escape) {
-      if (isEditing) {
-        setIsEditing(false);
-      } else {
+      if (key.delete && !isEditing) {
         onCancel();
+        return;
       }
-      return;
-    }
 
-    if (key.delete && !isEditing) {
-      onCancel();
-      return;
-    }
-
-    if (key.return) {
-      if (isEditing) {
-        setIsEditing(false);
+      if (key.return) {
+        if (isEditing) {
+          setIsEditing(false);
+        }
+        doSubmit();
+        return;
       }
-      doSubmit();
-      return;
-    }
 
-    if (input === " " && !isEditing && currentField) {
-      if (currentField.type === "toggle") {
-        handleToggle(currentField.name);
-      } else {
-        setIsEditing(true);
+      if (input === " " && !isEditing && currentField) {
+        if (currentField.type === "toggle") {
+          handleToggle(currentField.name);
+        } else {
+          setIsEditing(true);
+        }
+        return;
       }
-      return;
-    }
-  });
+    },
+    { isActive: isInteractive() },
+  );
 
   const renderField = (field: FormField, index: number) => {
     const isFocused = focusIndex === index;
@@ -172,7 +181,10 @@ export function OptionsForm({
           <Text color={isFocused ? "cyan" : undefined}>
             [{isChecked ? "✓" : " "}]
           </Text>
-          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}> {field.label}</Text>
+          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}>
+            {" "}
+            {field.label}
+          </Text>
         </Box>
       );
     }
@@ -186,15 +198,22 @@ export function OptionsForm({
           <Text color={isFocused ? "cyan" : undefined}>
             {isFocused ? "❯ " : "  "}
           </Text>
-          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}>{field.label}</Text>
+          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}>
+            {field.label}
+          </Text>
           {field.required && <Text color="red">*</Text>}
-          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}>: </Text>
+          <Text color={isFocused ? "white" : undefined} dimColor={!isFocused}>
+            :{" "}
+          </Text>
           {isEditingThis ? (
             <TextInput
               value={displayValue}
               onChange={(newValue) => {
                 if (field.type === "number") {
-                  handleNumberChange(field.name, newValue.replace(/[^0-9]/g, ""));
+                  handleNumberChange(
+                    field.name,
+                    newValue.replace(/[^0-9]/g, ""),
+                  );
                 } else {
                   handleTextChange(field.name, newValue);
                 }
@@ -203,16 +222,21 @@ export function OptionsForm({
               placeholder={field.placeholder}
             />
           ) : (
-            <Text color={displayValue ? "green" : undefined} dimColor={!displayValue}>
+            <Text
+              color={displayValue ? "green" : undefined}
+              dimColor={!displayValue}
+            >
               {displayValue || field.placeholder || "(empty)"}
             </Text>
           )}
         </Box>
-        {isFocused && !isEditing && (field.type === "text" || field.type === "number") && (
-          <Box marginLeft={2}>
-            <Text dimColor>Space to edit</Text>
-          </Box>
-        )}
+        {isFocused &&
+          !isEditing &&
+          (field.type === "text" || field.type === "number") && (
+            <Box marginLeft={2}>
+              <Text dimColor>Space to edit</Text>
+            </Box>
+          )}
       </Box>
     );
   };

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { render, Box, Text, useInput, useStdout } from "ink";
 import Spinner from "ink-spinner";
 import { loadConfig } from "../lib/config.js";
+import { isInteractive } from "../lib/tty.js";
 import {
   listRepos,
   filterActiveRepos,
@@ -14,14 +15,25 @@ import { ProgressBar } from "../components/ProgressBar.js";
 import { ResultList, OperationStats } from "../components/RepoList.js";
 import { Confirm } from "../components/Confirm.js";
 import { Divider } from "../components/Divider.js";
-import type { CloneOptions, GitHubRepo, RepoOperationResult } from "../types.js";
+import type {
+  CloneOptions,
+  GitHubRepo,
+  RepoOperationResult,
+} from "../types.js";
 
 interface CloneAppProps {
   options: CloneOptions;
   onComplete?: () => void;
 }
 
-type Phase = "checking" | "fetching" | "cloning" | "cancelling" | "done" | "confirmLiveRun" | "cancelled";
+type Phase =
+  | "checking"
+  | "fetching"
+  | "cloning"
+  | "cancelling"
+  | "done"
+  | "confirmLiveRun"
+  | "cancelled";
 
 export function CloneApp({ options, onComplete }: CloneAppProps) {
   const [phase, setPhase] = useState<Phase>("checking");
@@ -43,56 +55,62 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
     }
   }, [phase, onComplete]);
 
-  const runCloneOperations = useCallback(async (reposToClone: GitHubRepo[]) => {
-    const config = await loadConfig();
-    const resultsMap = new Map<number, RepoOperationResult>();
-    const currentlyActive = new Set<string>();
-    const concurrency = options.parallel ?? config.parallel ?? 10;
+  const runCloneOperations = useCallback(
+    async (reposToClone: GitHubRepo[]) => {
+      const config = await loadConfig();
+      const resultsMap = new Map<number, RepoOperationResult>();
+      const currentlyActive = new Set<string>();
+      const concurrency = options.parallel ?? config.parallel ?? 10;
 
-    const { results: opResults, cancelled } = await runParallel<RepoOperationResult, GitHubRepo>(
-      reposToClone,
-      async (repo: GitHubRepo, index: number) => {
-        currentlyActive.add(repo.name);
-        setActiveReposSet(new Set(currentlyActive));
-        
-        const targetPath = repo.name;
-        const exists = await directoryExists(targetPath);
+      const { results: opResults, cancelled } = await runParallel<
+        RepoOperationResult,
+        GitHubRepo
+      >(
+        reposToClone,
+        async (repo: GitHubRepo, index: number) => {
+          currentlyActive.add(repo.name);
+          setActiveReposSet(new Set(currentlyActive));
 
-        let result: RepoOperationResult;
+          const targetPath = repo.name;
+          const exists = await directoryExists(targetPath);
 
-        if (exists) {
-          result = await pullRepo(targetPath);
-          if (result.success && result.message === "up-to-date") {
-            result.message = "already up-to-date";
-          } else if (result.success) {
-            result.message = "pulled";
+          let result: RepoOperationResult;
+
+          if (exists) {
+            result = await pullRepo(targetPath);
+            if (result.success && result.message === "up-to-date") {
+              result.message = "already up-to-date";
+            } else if (result.success) {
+              result.message = "pulled";
+            }
+          } else {
+            const cloneUrl = getCloneUrl(repo);
+            result = await cloneRepo(cloneUrl, targetPath, {
+              shallow: options.shallow,
+            });
           }
-        } else {
-          const cloneUrl = getCloneUrl(repo);
-          result = await cloneRepo(cloneUrl, targetPath, {
-            shallow: options.shallow,
-          });
-        }
 
-        currentlyActive.delete(repo.name);
-        setActiveReposSet(new Set(currentlyActive));
-        
-        resultsMap.set(index, result);
-        return result;
-      },
-      concurrency,
-      (completed: number, total: number) => {
-        setProgress({ completed, total });
-        const resultArray = Array.from(resultsMap.values());
-        setResults([...resultArray]);
-      },
-      () => cancelledRef.current
-    );
+          currentlyActive.delete(repo.name);
+          setActiveReposSet(new Set(currentlyActive));
 
-    setActiveReposSet(new Set());
-    setResults(opResults.filter(Boolean));
-    setPhase(cancelled ? "cancelled" : "done");
-  }, [options.parallel, options.shallow]);
+          resultsMap.set(index, result);
+          return result;
+        },
+        concurrency,
+        (completed: number, total: number) => {
+          setProgress({ completed, total });
+          const resultArray = Array.from(resultsMap.values());
+          setResults([...resultArray]);
+        },
+        () => cancelledRef.current,
+      );
+
+      setActiveReposSet(new Set());
+      setResults(opResults.filter(Boolean));
+      setPhase(cancelled ? "cancelled" : "done");
+    },
+    [options.parallel, options.shallow],
+  );
 
   useEffect(() => {
     if (repos.length > 0 && !isDryRun && phase === "cloning") {
@@ -107,7 +125,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
         const targetOrg = options.org || config.org;
         if (!targetOrg) {
           setError(
-            "No organization specified. Use --org flag or run 'repos init' to configure."
+            "No organization specified. Use --org flag or run 'repos init' to configure.",
           );
           setPhase("done");
           return;
@@ -133,7 +151,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 
         if (activeRepos.length === 0) {
           setError(
-            `No active repositories found (activity threshold: ${daysThreshold} days)`
+            `No active repositories found (activity threshold: ${daysThreshold} days)`,
           );
           setPhase("done");
           return;
@@ -202,18 +220,25 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
     }
   }, [onComplete]);
 
-  useInput((input, key) => {
-    if (key.escape) {
-      if (phase === "cloning" || phase === "fetching") {
-        cancelledRef.current = true;
-        setPhase("cancelling");
-      } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        if (phase === "cloning" || phase === "fetching") {
+          cancelledRef.current = true;
+          setPhase("cancelling");
+        } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+          onComplete();
+        }
+      } else if (
+        key.delete &&
+        (phase === "done" || phase === "cancelled") &&
+        onComplete
+      ) {
         onComplete();
       }
-    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
-      onComplete();
-    }
-  });
+    },
+    { isActive: isInteractive() },
+  );
 
   if (error) {
     return (
@@ -263,7 +288,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 
   const cloned = results.filter((r) => r.message === "cloned").length;
   const pulled = results.filter(
-    (r) => r.message === "pulled" || r.message === "already up-to-date"
+    (r) => r.message === "pulled" || r.message === "already up-to-date",
   ).length;
   const failed = results.filter((r) => !r.success).length;
   const duration = Math.round((Date.now() - startTime) / 1000);
@@ -274,7 +299,9 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
-          {showingDryRunResults ? "Clone Preview (Dry Run)" : "Cloning Repositories"}
+          {showingDryRunResults
+            ? "Clone Preview (Dry Run)"
+            : "Cloning Repositories"}
         </Text>
         <Text dimColor> from {org}</Text>
         {options.shallow && <Text color="yellow"> (shallow)</Text>}
@@ -295,7 +322,9 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
                 <Spinner type="dots" />
               </Text>
               <Box marginLeft={1}>
-                <Text color="yellow">Cancelling... waiting for in-progress operations to finish</Text>
+                <Text color="yellow">
+                  Cancelling... waiting for in-progress operations to finish
+                </Text>
               </Box>
             </Box>
           )}
@@ -307,15 +336,25 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
                     <Spinner type="dots" />
                   </Text>
                   <Box marginLeft={1}>
-                    <Text dimColor>Processing {activeReposSet.size} repo{activeReposSet.size > 1 ? "s" : ""}: </Text>
+                    <Text dimColor>
+                      Processing {activeReposSet.size} repo
+                      {activeReposSet.size > 1 ? "s" : ""}:{" "}
+                    </Text>
                   </Box>
                 </Box>
                 <Box marginLeft={3} flexDirection="column">
-                  {Array.from(activeReposSet).slice(0, 10).map((repoName) => (
-                    <Text key={repoName} color="cyan">• {repoName}</Text>
-                  ))}
+                  {Array.from(activeReposSet)
+                    .slice(0, 10)
+                    .map((repoName) => (
+                      <Text key={repoName} color="cyan">
+                        • {repoName}
+                      </Text>
+                    ))}
                   {activeReposSet.size > 10 && (
-                    <Text dimColor>  ...and {activeReposSet.size - 10} more</Text>
+                    <Text dimColor>
+                      {" "}
+                      ...and {activeReposSet.size - 10} more
+                    </Text>
                   )}
                 </Box>
               </>
@@ -330,7 +369,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
               </Box>
             )}
           </Box>
-          {phase === "cloning" && (
+          {phase === "cloning" && isInteractive() && (
             <Box marginTop={1}>
               <Text dimColor>Esc Cancel</Text>
             </Box>
@@ -338,11 +377,14 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
         </>
       )}
 
-      {results.length > 0 && (phase === "done" || phase === "confirmLiveRun" || phase === "cancelled") && (
-        <Box flexDirection="column" marginBottom={1}>
-          <ResultList results={results} maxShow={50} />
-        </Box>
-      )}
+      {results.length > 0 &&
+        (phase === "done" ||
+          phase === "confirmLiveRun" ||
+          phase === "cancelled") && (
+          <Box flexDirection="column" marginBottom={1}>
+            <ResultList results={results} maxShow={50} />
+          </Box>
+        )}
 
       {phase === "confirmLiveRun" && (
         <>
@@ -351,8 +393,8 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
             <Box marginTop={1} flexDirection="column">
               <Text bold>Summary:</Text>
               <Text>
-                Active repositories: {repos.length} (of{" "}
-                {options.days ?? 90} day threshold)
+                Active repositories: {repos.length} (of {options.days ?? 90} day
+                threshold)
               </Text>
             </Box>
           </Box>
@@ -373,10 +415,12 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
           <Box flexDirection="column">
             <Divider width={40} />
             <Box marginTop={1} flexDirection="column">
-              <Text bold>{phase === "cancelled" ? "Cancelled" : "Summary"}:</Text>
+              <Text bold>
+                {phase === "cancelled" ? "Cancelled" : "Summary"}:
+              </Text>
               <Text>
-                Active repositories: {repos.length} (of{" "}
-                {options.days ?? 90} day threshold)
+                Active repositories: {repos.length} (of {options.days ?? 90} day
+                threshold)
               </Text>
               {!isDryRun && (
                 <>
@@ -384,7 +428,9 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
                   <Text color="cyan">Pulled: {pulled}</Text>
                   {failed > 0 && <Text color="red">Failed: {failed}</Text>}
                   {phase === "cancelled" && (
-                    <Text color="yellow">Skipped: {repos.length - results.length}</Text>
+                    <Text color="yellow">
+                      Skipped: {repos.length - results.length}
+                    </Text>
                   )}
                   <Text dimColor>Duration: {duration}s</Text>
                 </>
@@ -395,7 +441,8 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
           {phase === "cancelled" && (
             <Box marginTop={1}>
               <Text color="yellow">
-                Operation cancelled. {results.length} of {repos.length} repositories processed.
+                Operation cancelled. {results.length} of {repos.length}{" "}
+                repositories processed.
               </Text>
             </Box>
           )}
@@ -420,7 +467,11 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 }
 
 export async function runClone(options: CloneOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciClone } = await import("../lib/ci.js");
+    await ciClone(options);
+    return;
+  }
   const { waitUntilExit } = render(<CloneApp options={options} />);
   await waitUntilExit();
 }
-

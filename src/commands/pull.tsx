@@ -4,6 +4,7 @@ import Spinner from "ink-spinner";
 import { findRepos, filterRepos } from "../lib/repos.js";
 import { pullRepo, fetchRepo, getRepoStatus } from "../lib/git.js";
 import { loadConfig } from "../lib/config.js";
+import { isInteractive } from "../lib/tty.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { Confirm } from "../components/Confirm.js";
 import { Divider } from "../components/Divider.js";
@@ -14,9 +15,18 @@ interface PullAppProps {
   onComplete?: () => void;
 }
 
-type Phase = "finding" | "updating" | "cancelling" | "done" | "confirmLiveRun" | "cancelled";
+type Phase =
+  | "finding"
+  | "updating"
+  | "cancelling"
+  | "done"
+  | "confirmLiveRun"
+  | "cancelled";
 
-function getResultIcon(result: RepoOperationResult): { icon: string; color: string } {
+function getResultIcon(result: RepoOperationResult): {
+  icon: string;
+  color: string;
+} {
   if (result.success) {
     if (result.message === "updated" || result.message === "would update") {
       return { icon: "↓", color: "green" };
@@ -31,41 +41,45 @@ function getResultIcon(result: RepoOperationResult): { icon: string; color: stri
 
 function ResultRow({ result }: { result: RepoOperationResult }) {
   const { icon, color } = getResultIcon(result);
-  
+
   return (
     <Box>
       <Box width={3}>
         <Text color={color}>{icon}</Text>
       </Box>
       <Box width={28}>
-        <Text>{result.name.slice(0, 26)}{result.name.length > 26 ? "…" : ""}</Text>
+        <Text>
+          {result.name.slice(0, 26)}
+          {result.name.length > 26 ? "…" : ""}
+        </Text>
       </Box>
       <Box width={16}>
         <Text color={result.success ? "green" : "yellow"}>
           {result.message}
         </Text>
       </Box>
-      {result.details && (
-        <Text dimColor>({result.details})</Text>
-      )}
-      {result.error && (
-        <Text dimColor>({result.error})</Text>
-      )}
+      {result.details && <Text dimColor>({result.details})</Text>}
+      {result.error && <Text dimColor>({result.error})</Text>}
     </Box>
   );
 }
 
-function ResultsTable({ 
-  results, 
-  showAll = false 
-}: { 
+function ResultsTable({
+  results,
+  showAll = false,
+}: {
   results: RepoOperationResult[];
   showAll?: boolean;
 }) {
-  const updated = results.filter(r => r.success && (r.message === "updated" || r.message === "would update"));
-  const upToDate = results.filter(r => r.success && r.message === "up-to-date");
-  const skipped = results.filter(r => r.message === "skipped");
-  const errors = results.filter(r => !r.success && r.message !== "skipped");
+  const updated = results.filter(
+    (r) =>
+      r.success && (r.message === "updated" || r.message === "would update"),
+  );
+  const upToDate = results.filter(
+    (r) => r.success && r.message === "up-to-date",
+  );
+  const skipped = results.filter((r) => r.message === "skipped");
+  const errors = results.filter((r) => !r.success && r.message !== "skipped");
 
   const maxShow = showAll ? 100 : 8;
 
@@ -74,12 +88,14 @@ function ResultsTable({
       {/* Updated repos */}
       {updated.length > 0 && (
         <Box flexDirection="column" marginBottom={1}>
-          <Text color="green" bold>Updated ({updated.length}):</Text>
-          {updated.slice(0, maxShow).map(r => (
+          <Text color="green" bold>
+            Updated ({updated.length}):
+          </Text>
+          {updated.slice(0, maxShow).map((r) => (
             <ResultRow key={r.name} result={r} />
           ))}
           {updated.length > maxShow && (
-            <Text dimColor>  ... and {updated.length - maxShow} more</Text>
+            <Text dimColor> ... and {updated.length - maxShow} more</Text>
           )}
         </Box>
       )}
@@ -87,14 +103,13 @@ function ResultsTable({
       {/* Up to date repos (collapsed unless showAll) */}
       {upToDate.length > 0 && (
         <Box flexDirection="column" marginBottom={1}>
-          <Text color="green">
-            Already up-to-date: {upToDate.length} repos
-          </Text>
-          {showAll && upToDate.slice(0, 20).map(r => (
-            <ResultRow key={r.name} result={r} />
-          ))}
+          <Text color="green">Already up-to-date: {upToDate.length} repos</Text>
+          {showAll &&
+            upToDate
+              .slice(0, 20)
+              .map((r) => <ResultRow key={r.name} result={r} />)}
           {showAll && upToDate.length > 20 && (
-            <Text dimColor>  ... and {upToDate.length - 20} more</Text>
+            <Text dimColor> ... and {upToDate.length - 20} more</Text>
           )}
         </Box>
       )}
@@ -102,12 +117,14 @@ function ResultsTable({
       {/* Skipped repos */}
       {skipped.length > 0 && (
         <Box flexDirection="column" marginBottom={1}>
-          <Text color="yellow" bold>Skipped ({skipped.length}):</Text>
-          {skipped.slice(0, maxShow).map(r => (
+          <Text color="yellow" bold>
+            Skipped ({skipped.length}):
+          </Text>
+          {skipped.slice(0, maxShow).map((r) => (
             <ResultRow key={r.name} result={r} />
           ))}
           {skipped.length > maxShow && (
-            <Text dimColor>  ... and {skipped.length - maxShow} more</Text>
+            <Text dimColor> ... and {skipped.length - maxShow} more</Text>
           )}
         </Box>
       )}
@@ -115,12 +132,14 @@ function ResultsTable({
       {/* Errors */}
       {errors.length > 0 && (
         <Box flexDirection="column" marginBottom={1}>
-          <Text color="red" bold>Errors ({errors.length}):</Text>
-          {errors.slice(0, maxShow).map(r => (
+          <Text color="red" bold>
+            Errors ({errors.length}):
+          </Text>
+          {errors.slice(0, maxShow).map((r) => (
             <ResultRow key={r.name} result={r} />
           ))}
           {errors.length > maxShow && (
-            <Text dimColor>  ... and {errors.length - maxShow} more</Text>
+            <Text dimColor> ... and {errors.length - maxShow} more</Text>
           )}
         </Box>
       )}
@@ -147,38 +166,41 @@ export function PullApp({ options, onComplete }: PullAppProps) {
     }
   }, [phase, onComplete]);
 
-  const runUpdateOperations = useCallback(async (repoPaths: string[], parallelCount: number) => {
-    const allResults: RepoOperationResult[] = [];
-    let completed = 0;
-    let index = 0;
-    let wasCancelled = false;
+  const runUpdateOperations = useCallback(
+    async (repoPaths: string[], parallelCount: number) => {
+      const allResults: RepoOperationResult[] = [];
+      let completed = 0;
+      let index = 0;
+      let wasCancelled = false;
 
-    const processNext = async (): Promise<void> => {
-      while (index < repoPaths.length) {
-        if (cancelledRef.current) {
-          wasCancelled = true;
-          return;
+      const processNext = async (): Promise<void> => {
+        while (index < repoPaths.length) {
+          if (cancelledRef.current) {
+            wasCancelled = true;
+            return;
+          }
+          const currentIndex = index++;
+          const repoPath = repoPaths[currentIndex];
+          const result = await pullRepo(repoPath);
+
+          allResults[currentIndex] = result;
+          completed++;
+          setProgress({ completed, total: repoPaths.length });
+          setResults([...allResults.filter(Boolean)]);
         }
-        const currentIndex = index++;
-        const repoPath = repoPaths[currentIndex];
-        const result = await pullRepo(repoPath);
+      };
 
-        allResults[currentIndex] = result;
-        completed++;
-        setProgress({ completed, total: repoPaths.length });
-        setResults([...allResults.filter(Boolean)]);
-      }
-    };
+      const workers = Array(Math.min(parallelCount, repoPaths.length))
+        .fill(null)
+        .map(() => processNext());
 
-    const workers = Array(Math.min(parallelCount, repoPaths.length))
-      .fill(null)
-      .map(() => processNext());
+      await Promise.all(workers);
 
-    await Promise.all(workers);
-
-    setResults(allResults.filter(Boolean));
-    setPhase(wasCancelled ? "cancelled" : "done");
-  }, []);
+      setResults(allResults.filter(Boolean));
+      setPhase(wasCancelled ? "cancelled" : "done");
+    },
+    [],
+  );
 
   useEffect(() => {
     if (repos.length > 0 && !isDryRun && phase === "updating") {
@@ -331,18 +353,25 @@ export function PullApp({ options, onComplete }: PullAppProps) {
     }
   }, [onComplete]);
 
-  useInput((input, key) => {
-    if (key.escape) {
-      if (phase === "updating") {
-        cancelledRef.current = true;
-        setPhase("cancelling");
-      } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        if (phase === "updating") {
+          cancelledRef.current = true;
+          setPhase("cancelling");
+        } else if ((phase === "done" || phase === "cancelled") && onComplete) {
+          onComplete();
+        }
+      } else if (
+        key.delete &&
+        (phase === "done" || phase === "cancelled") &&
+        onComplete
+      ) {
         onComplete();
       }
-    } else if (key.delete && (phase === "done" || phase === "cancelled") && onComplete) {
-      onComplete();
-    }
-  });
+    },
+    { isActive: isInteractive() },
+  );
 
   if (error) {
     return (
@@ -370,10 +399,17 @@ export function PullApp({ options, onComplete }: PullAppProps) {
     );
   }
 
-  const updated = results.filter(r => r.success && (r.message === "updated" || r.message === "would update")).length;
-  const upToDate = results.filter(r => r.success && r.message === "up-to-date").length;
-  const skipped = results.filter(r => r.message === "skipped").length;
-  const errors = results.filter(r => !r.success && r.message !== "skipped").length;
+  const updated = results.filter(
+    (r) =>
+      r.success && (r.message === "updated" || r.message === "would update"),
+  ).length;
+  const upToDate = results.filter(
+    (r) => r.success && r.message === "up-to-date",
+  ).length;
+  const skipped = results.filter((r) => r.message === "skipped").length;
+  const errors = results.filter(
+    (r) => !r.success && r.message !== "skipped",
+  ).length;
   const duration = Math.round((Date.now() - startTime) / 1000);
 
   const showingDryRunResults = isDryRun || phase === "confirmLiveRun";
@@ -382,9 +418,14 @@ export function PullApp({ options, onComplete }: PullAppProps) {
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
-          {showingDryRunResults ? "Update Check (Dry Run)" : "Updating Repositories"}
+          {showingDryRunResults
+            ? "Update Check (Dry Run)"
+            : "Updating Repositories"}
         </Text>
-        <Text dimColor> • {repos.length} repos • parallel: {parallel}</Text>
+        <Text dimColor>
+          {" "}
+          • {repos.length} repos • parallel: {parallel}
+        </Text>
       </Box>
 
       {(phase === "updating" || phase === "cancelling") && (
@@ -402,27 +443,34 @@ export function PullApp({ options, onComplete }: PullAppProps) {
                 <Spinner type="dots" />
               </Text>
               <Box marginLeft={1}>
-                <Text color="yellow">Cancelling... waiting for in-progress operations to finish</Text>
+                <Text color="yellow">
+                  Cancelling... waiting for in-progress operations to finish
+                </Text>
               </Box>
             </Box>
           ) : (
-            <Box marginTop={1}>
-              <Text dimColor>Esc Cancel</Text>
-            </Box>
+            isInteractive() && (
+              <Box marginTop={1}>
+                <Text dimColor>Esc Cancel</Text>
+              </Box>
+            )
           )}
         </>
       )}
 
-      {(phase === "updating" || phase === "cancelling") && !options.quiet && results.length > 0 && (
-        <Box flexDirection="column" marginTop={1}>
-          <Divider marginTop={0} marginBottom={1} />
-          <ResultsTable results={results} showAll={false} />
-        </Box>
-      )}
+      {(phase === "updating" || phase === "cancelling") &&
+        !options.quiet &&
+        results.length > 0 && (
+          <Box flexDirection="column" marginTop={1}>
+            <Divider marginTop={0} marginBottom={1} />
+            <ResultsTable results={results} showAll={false} />
+          </Box>
+        )}
 
-      {(phase === "done" || phase === "confirmLiveRun" || phase === "cancelled") && !options.quiet && (
-        <ResultsTable results={results} showAll={true} />
-      )}
+      {(phase === "done" ||
+        phase === "confirmLiveRun" ||
+        phase === "cancelled") &&
+        !options.quiet && <ResultsTable results={results} showAll={true} />}
 
       {phase === "confirmLiveRun" && (
         <Box flexDirection="column">
@@ -484,7 +532,9 @@ export function PullApp({ options, onComplete }: PullAppProps) {
             {updated > 0 && (
               <Box>
                 <Box width={25}>
-                  <Text color="green">{isDryRun ? "Would update:" : "Updated:"}</Text>
+                  <Text color="green">
+                    {isDryRun ? "Would update:" : "Updated:"}
+                  </Text>
                 </Box>
                 <Text color="green">{updated}</Text>
               </Box>
@@ -532,7 +582,8 @@ export function PullApp({ options, onComplete }: PullAppProps) {
       {phase === "cancelled" && (
         <Box marginTop={1}>
           <Text color="yellow">
-            Operation cancelled. {results.length} of {repos.length} repositories processed.
+            Operation cancelled. {results.length} of {repos.length} repositories
+            processed.
           </Text>
         </Box>
       )}
@@ -557,6 +608,11 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 }
 
 export async function runPull(options: UpdateOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciPull } = await import("../lib/ci.js");
+    await ciPull(options);
+    return;
+  }
   const { waitUntilExit } = render(<PullApp options={options} />);
   await waitUntilExit();
 }
