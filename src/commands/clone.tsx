@@ -467,6 +467,11 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 }
 
 export async function runClone(options: CloneOptions): Promise<void> {
+  if (!isInteractive()) {
+    const { ciClone } = await import("../lib/ci.js");
+    await ciClone(options);
+    return;
+  }
   const { waitUntilExit } = render(<CloneApp options={options} />);
   await waitUntilExit();
 }

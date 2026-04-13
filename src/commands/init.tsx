@@ -426,6 +426,12 @@ export function InitApp({ force, basePath, onComplete }: InitAppProps) {
 }
 
 export async function runInit(force?: boolean): Promise<void> {
+  if (!isInteractive()) {
+    console.error(
+      "`repos init` requires an interactive terminal. Run in a TTY to configure.",
+    );
+    process.exit(1);
+  }
   const { waitUntilExit } = render(<InitApp force={force} />);
   await waitUntilExit();
 }

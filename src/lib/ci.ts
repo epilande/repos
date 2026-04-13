@@ -11,6 +11,7 @@ import {
   findRepos,
   filterRepos,
   runParallel,
+  directoryExists,
   getRepoName,
   getAllRepoStatuses,
 } from "./repos.js";
@@ -19,11 +20,18 @@ import {
   fetchRepo,
   pullRepo,
   cleanRepo,
+  cloneRepo,
   diffRepo,
   checkoutBranch,
   execInRepo,
   type FetchRepoOptions,
 } from "./git.js";
+import {
+  listRepos,
+  filterActiveRepos,
+  getCloneUrl,
+  getGitHubConfig,
+} from "./github.js";
 import { formatSync } from "./format.js";
 import type {
   StatusOptions,
@@ -33,7 +41,9 @@ import type {
   CheckoutOptions,
   ExecOptions,
   CleanupOptions,
+  CloneOptions,
   ConfigOptions,
+  GitHubRepo,
   ReposConfig,
   RepoOperationResult,
 } from "../types.js";
@@ -344,10 +354,13 @@ export async function ciCheckout(options: CheckoutOptions): Promise<void> {
   ).length;
   const skipped = results.filter((r) => r.message === "skipped").length;
   const notFound = results.filter((r) => r.message === "not found").length;
+  const errors = results.filter(
+    (r) => !r.success && r.message !== "skipped" && r.message !== "not found",
+  ).length;
 
   console.log();
   console.log(
-    `Switched: ${switched}  Created: ${created}  Skipped: ${skipped}  Not found: ${notFound}`,
+    `Switched: ${switched}  Created: ${created}  Skipped: ${skipped}  Not found: ${notFound}  Errors: ${errors}`,
   );
 }
 
@@ -432,6 +445,91 @@ export async function ciClean(options: CleanupOptions): Promise<void> {
   const failed = results.filter((r) => !r.success).length;
   console.log();
   console.log(`Cleaned: ${successful}  Failed: ${failed}`);
+}
+
+// ── Clone ───────────────────────────────────────────────────────
+
+export async function ciClone(options: CloneOptions): Promise<void> {
+  const config = await loadConfig();
+  const ghConfig = await getGitHubConfig();
+
+  const targetOrg = options.org || config.org;
+  if (!targetOrg) {
+    console.error(
+      "No organization specified. Use --org flag or run 'repos init' to configure.",
+    );
+    process.exit(1);
+  }
+
+  const host = options.host || ghConfig.host;
+  const allRepos = await listRepos(targetOrg, {
+    config: { host, apiUrl: ghConfig.apiUrl },
+    timeout: config.timeout,
+  });
+
+  if (allRepos.length === 0) {
+    console.error(`No repositories found for ${targetOrg}`);
+    process.exit(1);
+  }
+
+  const daysThreshold = options.days ?? config.daysThreshold ?? 90;
+  const activeRepos = filterActiveRepos(allRepos, daysThreshold);
+
+  if (activeRepos.length === 0) {
+    console.error(
+      `No active repositories found (activity threshold: ${daysThreshold} days)`,
+    );
+    process.exit(1);
+  }
+
+  if (options.dryRun) {
+    console.log(
+      `Active repositories from ${targetOrg} (${activeRepos.length} of ${allRepos.length}):`,
+    );
+    for (const repo of activeRepos) {
+      const exists = await directoryExists(repo.name);
+      const action = exists ? "would pull" : "would clone";
+      console.log(
+        `  ${exists ? "↓" : "+"} ${pad(repo.name, 28)} ${action}  (last activity: ${repo.pushedAt.slice(0, 10)})`,
+      );
+    }
+    return;
+  }
+
+  const concurrency = options.parallel ?? config.parallel ?? 10;
+  const { results } = await runParallel<RepoOperationResult, GitHubRepo>(
+    activeRepos,
+    async (repo: GitHubRepo) => {
+      const exists = await directoryExists(repo.name);
+      if (exists) {
+        const result = await pullRepo(repo.name);
+        if (result.success && result.message === "up-to-date") {
+          result.message = "already up-to-date";
+        } else if (result.success) {
+          result.message = "pulled";
+        }
+        return result;
+      }
+      const cloneUrl = getCloneUrl(repo);
+      return cloneRepo(cloneUrl, repo.name, { shallow: options.shallow });
+    },
+    concurrency,
+  );
+
+  for (const r of results) {
+    const icon = r.success ? "✓" : "✗";
+    const msg = r.error ? `${r.message} (${r.error})` : r.message;
+    console.log(`${icon} ${pad(r.name, 28)} ${msg}`);
+  }
+
+  const cloned = results.filter((r) => r.message === "cloned").length;
+  const pulled = results.filter(
+    (r) => r.message === "pulled" || r.message === "already up-to-date",
+  ).length;
+  const failed = results.filter((r) => !r.success).length;
+
+  console.log();
+  console.log(`Cloned: ${cloned}  Pulled: ${pulled}  Failed: ${failed}`);
 }
 
 // ── Config ───────────────────────────────────────────────────────

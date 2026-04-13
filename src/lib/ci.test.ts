@@ -309,6 +309,7 @@ describe("CI output", () => {
         expect(output).toContain("repo-a");
         expect(output).toContain("repo-b");
         expect(output).toContain("Switched:");
+        expect(output).toContain("Errors:");
       } finally {
         out.restore();
         await cleanup();
