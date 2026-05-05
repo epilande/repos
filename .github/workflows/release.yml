@@ -39,18 +39,22 @@ jobs:
   build:
     needs: check-version
     if: needs.check-version.outputs.should_release == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - target: bun-darwin-arm64
             artifact: repos-macos-arm64
+            os: macos-latest
           - target: bun-darwin-x64
             artifact: repos-macos-x64
+            os: macos-latest
           - target: bun-linux-x64
             artifact: repos-linux-x64
+            os: ubuntu-latest
           - target: bun-windows-x64
             artifact: repos-windows-x64.exe
+            os: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -66,6 +70,12 @@ jobs:
 
       - name: Build binary
         run: bun build ./src/index.ts --compile --target=${{ matrix.target }} --outfile ${{ matrix.artifact }}
+
+      - name: Ad-hoc sign macOS binary
+        if: startsWith(matrix.target, 'bun-darwin')
+        run: |
+          codesign -s - --force ${{ matrix.artifact }}
+          codesign -dvvv ${{ matrix.artifact }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
