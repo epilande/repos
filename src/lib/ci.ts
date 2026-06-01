@@ -214,19 +214,35 @@ export async function ciPull(options: UpdateOptions): Promise<void> {
       concurrency,
     );
 
+    let dryUpdated = 0;
+    let dryUpToDate = 0;
+    let dryDiverged = 0;
+    let drySkipped = 0;
+
     for (const s of statuses) {
-      if (s.modified > 0 || s.staged > 0) {
-        console.log(`⚠ ${pad(s.name, 28)} skipped (uncommitted changes)`);
-      } else if (!s.hasUpstream) {
+      if (!s.hasUpstream) {
         console.log(`⚠ ${pad(s.name, 28)} skipped (no upstream)`);
+        drySkipped++;
+      } else if (s.behind > 0 && s.ahead > 0) {
+        console.log(
+          `⚠ ${pad(s.name, 28)} would fail (diverged: ${s.ahead} ahead, ${s.behind} behind)`,
+        );
+        dryDiverged++;
       } else if (s.behind > 0) {
         console.log(
           `↓ ${pad(s.name, 28)} would update (${s.behind} commits behind)`,
         );
+        dryUpdated++;
       } else {
         console.log(`✓ ${pad(s.name, 28)} up-to-date`);
+        dryUpToDate++;
       }
     }
+
+    console.log();
+    console.log(
+      `Would update: ${dryUpdated}  Up-to-date: ${dryUpToDate}  Diverged: ${dryDiverged}  Skipped: ${drySkipped}`,
+    );
     return;
   }
 

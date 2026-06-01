@@ -7,6 +7,7 @@ import {
   ciExec,
   ciClean,
   ciConfig,
+  ciPull,
 } from "./ci.js";
 import { createTempRepoDir } from "../../tests/helpers/temp-repos.js";
 
@@ -331,6 +332,31 @@ describe("CI output", () => {
         expect(output).toContain("Would fetch 2 repositories");
         expect(output).toContain("repo-a");
         expect(output).toContain("repo-b");
+      } finally {
+        out.restore();
+        await cleanup();
+      }
+    });
+  });
+
+  describe("ciPull", () => {
+    test("dry-run skips no-upstream repos and shows summary", async () => {
+      const { basePath, cleanup } = await createTempRepoDir([
+        { name: "no-upstream-a" },
+        { name: "no-upstream-b" },
+      ]);
+      const out = captureOutput();
+
+      try {
+        await ciPull({ basePath, dryRun: true });
+        const output = out.output();
+
+        expect(output).toContain("no-upstream-a");
+        expect(output).toContain("no-upstream-b");
+        expect(output).toContain("skipped (no upstream)");
+        expect(output).toContain(
+          "Would update: 0  Up-to-date: 0  Diverged: 0  Skipped: 2",
+        );
       } finally {
         out.restore();
         await cleanup();
