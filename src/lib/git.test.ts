@@ -233,6 +233,8 @@ describe("git.ts", () => {
       const clonePath = tempClonePath("clone-diverged");
       try {
         await $`git clone ${origin.path} ${clonePath}`.quiet();
+        await $`git -C ${clonePath} config user.email "test@test.com"`.quiet();
+        await $`git -C ${clonePath} config user.name "Test User"`.quiet();
 
         // Add a commit to origin
         await writeFile(join(origin.path, "from-origin.txt"), "origin commit");
