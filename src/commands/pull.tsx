@@ -636,10 +636,12 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 
       {phase === "done" && isDryRun && (
         <Box marginTop={1}>
-          <Text color={updated > 0 ? "yellow" : "green"}>
+          <Text color={updated > 0 || diverged > 0 ? "yellow" : "green"}>
             {updated > 0
               ? "Run without --dry-run to actually update."
-              : "✓ All repositories are already up-to-date!"}
+              : diverged > 0
+                ? "Some repositories have diverged and cannot be fast-forwarded."
+                : "✓ All repositories are already up-to-date!"}
           </Text>
         </Box>
       )}
