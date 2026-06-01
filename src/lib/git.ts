@@ -23,7 +23,9 @@ async function runWithTimeout(
 ): Promise<Awaited<ReturnType<typeof $>>> {
   const timeoutPromise = new Promise<never>((_, reject) => {
     setTimeout(() => {
-      reject(new GitTimeoutError(`timed out after ${Math.round(timeoutMs / 1000)}s`));
+      reject(
+        new GitTimeoutError(`timed out after ${Math.round(timeoutMs / 1000)}s`),
+      );
     }, timeoutMs);
   });
   return Promise.race([shellPromise, timeoutPromise]);
@@ -107,7 +109,10 @@ export async function getRepoStatus(repoPath: string): Promise<RepoStatus> {
     const statusResult = await $`git -C ${repoPath} status --porcelain`.quiet();
     // Split first, then filter - don't use trim() as it removes leading spaces
     // which are significant in git porcelain output (e.g., " M file.txt")
-    const statusLines = statusResult.text().split("\n").filter((line) => line.length >= 2);
+    const statusLines = statusResult
+      .text()
+      .split("\n")
+      .filter((line) => line.length >= 2);
 
     for (const line of statusLines) {
       const indexStatus = line[0];
@@ -118,8 +123,7 @@ export async function getRepoStatus(repoPath: string): Promise<RepoStatus> {
       else if (worktreeStatus === "D") deleted++;
       if (indexStatus === "?") untracked++;
     }
-  } catch {
-  }
+  } catch {}
   let ahead = 0;
   let behind = 0;
   let hasUpstream = false;
@@ -139,8 +143,7 @@ export async function getRepoStatus(repoPath: string): Promise<RepoStatus> {
         await $`git -C ${repoPath} rev-list --count ${upstream}..HEAD`.quiet();
       ahead = parseInt(behindResult.text().trim()) || 0;
     }
-  } catch {
-  }
+  } catch {}
 
   const isClean =
     modified === 0 && staged === 0 && untracked === 0 && deleted === 0;
@@ -166,14 +169,6 @@ export async function pullRepo(repoPath: string): Promise<RepoOperationResult> {
 
   try {
     const status = await getRepoStatus(repoPath);
-    if (status.modified > 0 || status.staged > 0) {
-      return {
-        name,
-        success: false,
-        message: "skipped",
-        error: "Has uncommitted changes",
-      };
-    }
 
     if (!status.hasUpstream) {
       return {
@@ -185,21 +180,22 @@ export async function pullRepo(repoPath: string): Promise<RepoOperationResult> {
     }
 
     const result = await runWithTimeout(
-      $`git -C ${repoPath} pull`.quiet().nothrow(),
+      $`git -C ${repoPath} pull --ff-only`.quiet().nothrow(),
       timeout,
     );
-    const output = result.text();
+    const stdout = result.text();
 
     if (result.exitCode !== 0) {
+      const stderr = result.stderr.toString().trim();
       return {
         name,
         success: false,
         message: "error",
-        error: output || "Pull failed",
+        error: stderr || stdout.trim() || "Pull failed",
       };
     }
 
-    if (output.includes("Already up to date")) {
+    if (stdout.includes("Already up to date")) {
       return {
         name,
         success: true,
@@ -207,7 +203,7 @@ export async function pullRepo(repoPath: string): Promise<RepoOperationResult> {
       };
     }
 
-    const fileMatch = output.match(/(\d+) file/);
+    const fileMatch = stdout.match(/(\d+) file/);
     const fileCount = fileMatch ? fileMatch[1] : "some";
 
     return {
@@ -424,7 +420,9 @@ export async function diffRepo(repoPath: string): Promise<DiffResult> {
     const diffResult = await $`git -C ${repoPath} diff`.quiet().nothrow();
     const diff = diffResult.text().trim();
 
-    const statResult = await $`git -C ${repoPath} diff --stat`.quiet().nothrow();
+    const statResult = await $`git -C ${repoPath} diff --stat`
+      .quiet()
+      .nothrow();
     const stat = statResult.text().trim();
 
     return {

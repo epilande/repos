@@ -87,7 +87,9 @@ program
 
 program
   .command("pull")
-  .description("Pull latest changes for all repositories")
+  .description(
+    "Fast-forward pull (--ff-only) latest changes for all repositories",
+  )
   .option("-n, --dry-run", "Show what would be updated without pulling")
   .option("-q, --quiet", "Minimal output")
   .option("-f, --filter <pattern>", "Filter repos by pattern (e.g., 'api-*')")
@@ -104,7 +106,7 @@ program
 program
   .command("update")
   .description(
-    "(Deprecated: use 'pull') Pull latest changes for all repositories",
+    "(Deprecated: use 'pull') Fast-forward pull (--ff-only) latest changes for all repositories",
   )
   .option("-n, --dry-run", "Show what would be updated without pulling")
   .option("-q, --quiet", "Minimal output")

@@ -170,7 +170,7 @@ repos pull --filter 'api-*'  # Pull only matching repos
 ```
 
 > [!NOTE]
-> Repos with uncommitted changes are automatically skipped to protect your work.
+> Pull uses `git pull --ff-only`, so dirty repos are pulled too as long as the incoming changes do not overlap your modified files. Diverged branches (local commits + remote commits) are reported as errors instead of being silently merged. Repos without an upstream are skipped.
 
 ### Clone Command
 

@@ -23,6 +23,33 @@ type Phase =
   | "confirmLiveRun"
   | "cancelled";
 
+interface ResultBuckets {
+  updated: RepoOperationResult[];
+  upToDate: RepoOperationResult[];
+  diverged: RepoOperationResult[];
+  skipped: RepoOperationResult[];
+  errors: RepoOperationResult[];
+}
+
+function bucketResults(results: RepoOperationResult[]): ResultBuckets {
+  const buckets: ResultBuckets = {
+    updated: [],
+    upToDate: [],
+    diverged: [],
+    skipped: [],
+    errors: [],
+  };
+  for (const r of results) {
+    if (r.message === "skipped") buckets.skipped.push(r);
+    else if (r.message === "would fail") buckets.diverged.push(r);
+    else if (r.message === "up-to-date") buckets.upToDate.push(r);
+    else if (r.message === "updated" || r.message === "would update")
+      buckets.updated.push(r);
+    else if (!r.success) buckets.errors.push(r);
+  }
+  return buckets;
+}
+
 function getResultIcon(result: RepoOperationResult): {
   icon: string;
   color: string;
@@ -33,7 +60,7 @@ function getResultIcon(result: RepoOperationResult): {
     }
     return { icon: "✓", color: "green" };
   }
-  if (result.message === "skipped") {
+  if (result.message === "skipped" || result.message === "would fail") {
     return { icon: "⚠", color: "yellow" };
   }
   return { icon: "✗", color: "red" };
@@ -71,15 +98,8 @@ function ResultsTable({
   results: RepoOperationResult[];
   showAll?: boolean;
 }) {
-  const updated = results.filter(
-    (r) =>
-      r.success && (r.message === "updated" || r.message === "would update"),
-  );
-  const upToDate = results.filter(
-    (r) => r.success && r.message === "up-to-date",
-  );
-  const skipped = results.filter((r) => r.message === "skipped");
-  const errors = results.filter((r) => !r.success && r.message !== "skipped");
+  const { updated, upToDate, diverged, skipped, errors } =
+    bucketResults(results);
 
   const maxShow = showAll ? 100 : 8;
 
@@ -110,6 +130,21 @@ function ResultsTable({
               .map((r) => <ResultRow key={r.name} result={r} />)}
           {showAll && upToDate.length > 20 && (
             <Text dimColor> ... and {upToDate.length - 20} more</Text>
+          )}
+        </Box>
+      )}
+
+      {/* Diverged repos (dry-run only) */}
+      {diverged.length > 0 && (
+        <Box flexDirection="column" marginBottom={1}>
+          <Text color="yellow" bold>
+            Diverged ({diverged.length}):
+          </Text>
+          {diverged.slice(0, maxShow).map((r) => (
+            <ResultRow key={r.name} result={r} />
+          ))}
+          {diverged.length > maxShow && (
+            <Text dimColor> ... and {diverged.length - maxShow} more</Text>
           )}
         </Box>
       )}
@@ -256,19 +291,19 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 
               let result: RepoOperationResult;
 
-              if (status.modified > 0 || status.staged > 0) {
-                result = {
-                  name,
-                  success: false,
-                  message: "skipped",
-                  error: "Has uncommitted changes",
-                };
-              } else if (!status.hasUpstream) {
+              if (!status.hasUpstream) {
                 result = {
                   name,
                   success: false,
                   message: "skipped",
                   error: "No upstream configured",
+                };
+              } else if (status.behind > 0 && status.ahead > 0) {
+                result = {
+                  name,
+                  success: false,
+                  message: "would fail",
+                  error: `diverged: ${status.ahead} ahead, ${status.behind} behind`,
                 };
               } else if (status.behind > 0) {
                 result = {
@@ -399,17 +434,12 @@ export function PullApp({ options, onComplete }: PullAppProps) {
     );
   }
 
-  const updated = results.filter(
-    (r) =>
-      r.success && (r.message === "updated" || r.message === "would update"),
-  ).length;
-  const upToDate = results.filter(
-    (r) => r.success && r.message === "up-to-date",
-  ).length;
-  const skipped = results.filter((r) => r.message === "skipped").length;
-  const errors = results.filter(
-    (r) => !r.success && r.message !== "skipped",
-  ).length;
+  const buckets = bucketResults(results);
+  const updated = buckets.updated.length;
+  const upToDate = buckets.upToDate.length;
+  const diverged = buckets.diverged.length;
+  const skipped = buckets.skipped.length;
+  const errors = buckets.errors.length;
   const duration = Math.round((Date.now() - startTime) / 1000);
 
   const showingDryRunResults = isDryRun || phase === "confirmLiveRun";
@@ -497,6 +527,14 @@ export function PullApp({ options, onComplete }: PullAppProps) {
               </Box>
               <Text>{upToDate}</Text>
             </Box>
+            {diverged > 0 && (
+              <Box>
+                <Box width={25}>
+                  <Text color="yellow">Diverged:</Text>
+                </Box>
+                <Text color="yellow">{diverged}</Text>
+              </Box>
+            )}
             {skipped > 0 && (
               <Box>
                 <Box width={25}>
@@ -545,6 +583,14 @@ export function PullApp({ options, onComplete }: PullAppProps) {
               </Box>
               <Text>{upToDate}</Text>
             </Box>
+            {diverged > 0 && (
+              <Box>
+                <Box width={25}>
+                  <Text color="yellow">Diverged:</Text>
+                </Box>
+                <Text color="yellow">{diverged}</Text>
+              </Box>
+            )}
             {skipped > 0 && (
               <Box>
                 <Box width={25}>
@@ -590,10 +636,12 @@ export function PullApp({ options, onComplete }: PullAppProps) {
 
       {phase === "done" && isDryRun && (
         <Box marginTop={1}>
-          <Text color={updated > 0 ? "yellow" : "green"}>
+          <Text color={updated > 0 || diverged > 0 ? "yellow" : "green"}>
             {updated > 0
               ? "Run without --dry-run to actually update."
-              : "✓ All repositories are already up-to-date!"}
+              : diverged > 0
+                ? "Some repositories have diverged and cannot be fast-forwarded."
+                : "✓ All repositories are already up-to-date!"}
           </Text>
         </Box>
       )}

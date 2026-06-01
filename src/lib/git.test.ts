@@ -2,6 +2,12 @@ import { describe, test, expect } from "bun:test";
 import { createTempRepo } from "../../tests/helpers/temp-repos.js";
 import { writeFile, mkdir, rm } from "fs/promises";
 import { join } from "path";
+import { tmpdir } from "os";
+import { randomUUID } from "crypto";
+
+function tempClonePath(label: string): string {
+  return join(tmpdir(), `repos-test-${label}-${randomUUID().slice(0, 8)}`);
+}
 import {
   isGitRepo,
   getCurrentBranch,
@@ -127,21 +133,6 @@ describe("git.ts", () => {
   });
 
   describe("pullRepo", () => {
-    test("skips repos with uncommitted changes", async () => {
-      const repo = await createTempRepo({ dirty: true });
-      try {
-        // Modify an existing file to have uncommitted changes
-        await writeFile(join(repo.path, "README.md"), "Modified content");
-
-        const result = await pullRepo(repo.path);
-        expect(result.success).toBe(false);
-        expect(result.message).toBe("skipped");
-        expect(result.error).toContain("uncommitted changes");
-      } finally {
-        await repo.cleanup();
-      }
-    });
-
     test("skips repos with no upstream configured", async () => {
       const repo = await createTempRepo();
       try {
@@ -151,6 +142,117 @@ describe("git.ts", () => {
         expect(result.error).toContain("No upstream");
       } finally {
         await repo.cleanup();
+      }
+    });
+
+    test("fast-forwards a clean repo that is behind", async () => {
+      const { $ } = await import("bun");
+      const origin = await createTempRepo({ name: `origin-${Date.now()}` });
+      const clonePath = tempClonePath("clone-ff");
+      try {
+        await $`git clone ${origin.path} ${clonePath}`.quiet();
+        await writeFile(join(origin.path, "added.txt"), "from origin");
+        await $`git -C ${origin.path} add -A`.quiet();
+        await $`git -C ${origin.path} commit -m "added"`.quiet();
+
+        const result = await pullRepo(clonePath);
+        expect(result.success).toBe(true);
+        expect(result.message).toBe("updated");
+      } finally {
+        await rm(clonePath, { recursive: true, force: true });
+        await origin.cleanup();
+      }
+    });
+
+    test("fast-forwards a dirty repo when files do not overlap", async () => {
+      const { $ } = await import("bun");
+      const origin = await createTempRepo({ name: `origin-${Date.now()}` });
+      const clonePath = tempClonePath("clone-dirty-ff");
+      try {
+        await $`git clone ${origin.path} ${clonePath}`.quiet();
+        await writeFile(join(origin.path, "from-origin.txt"), "from origin");
+        await $`git -C ${origin.path} add -A`.quiet();
+        await $`git -C ${origin.path} commit -m "from origin"`.quiet();
+
+        // Local change to a different file - no overlap with incoming commit
+        await writeFile(join(clonePath, "local-only.txt"), "local work");
+
+        const result = await pullRepo(clonePath);
+        expect(result.success).toBe(true);
+        expect(result.message).toBe("updated");
+      } finally {
+        await rm(clonePath, { recursive: true, force: true });
+        await origin.cleanup();
+      }
+    });
+
+    test("errors when dirty file overlaps incoming change", async () => {
+      const { $ } = await import("bun");
+      const origin = await createTempRepo({ name: `origin-${Date.now()}` });
+      const clonePath = tempClonePath("clone-dirty-overlap");
+      try {
+        await $`git clone ${origin.path} ${clonePath}`.quiet();
+
+        // Origin commits a change to README.md (which exists from initial commit)
+        await writeFile(join(origin.path, "README.md"), "origin version");
+        await $`git -C ${origin.path} add -A`.quiet();
+        await $`git -C ${origin.path} commit -m "origin changes README"`.quiet();
+
+        // Local uncommitted change to the same tracked file
+        await writeFile(join(clonePath, "README.md"), "local uncommitted");
+
+        const result = await pullRepo(clonePath);
+        expect(result.success).toBe(false);
+        expect(result.message).toBe("error");
+        expect(result.error).toMatch(/would be overwritten|Aborting/);
+      } finally {
+        await rm(clonePath, { recursive: true, force: true });
+        await origin.cleanup();
+      }
+    });
+
+    test("returns up-to-date when already in sync", async () => {
+      const { $ } = await import("bun");
+      const origin = await createTempRepo({ name: `origin-${Date.now()}` });
+      const clonePath = tempClonePath("clone-up-to-date");
+      try {
+        await $`git clone ${origin.path} ${clonePath}`.quiet();
+
+        const result = await pullRepo(clonePath);
+        expect(result.success).toBe(true);
+        expect(result.message).toBe("up-to-date");
+      } finally {
+        await rm(clonePath, { recursive: true, force: true });
+        await origin.cleanup();
+      }
+    });
+
+    test("errors out on diverged history (not fast-forwardable)", async () => {
+      const { $ } = await import("bun");
+      const origin = await createTempRepo({ name: `origin-${Date.now()}` });
+      const clonePath = tempClonePath("clone-diverged");
+      try {
+        await $`git clone ${origin.path} ${clonePath}`.quiet();
+        await $`git -C ${clonePath} config user.email "test@test.com"`.quiet();
+        await $`git -C ${clonePath} config user.name "Test User"`.quiet();
+
+        // Add a commit to origin
+        await writeFile(join(origin.path, "from-origin.txt"), "origin commit");
+        await $`git -C ${origin.path} add -A`.quiet();
+        await $`git -C ${origin.path} commit -m "origin commit"`.quiet();
+
+        // Add a divergent commit to clone
+        await writeFile(join(clonePath, "from-clone.txt"), "clone commit");
+        await $`git -C ${clonePath} add -A`.quiet();
+        await $`git -C ${clonePath} commit -m "clone commit"`.quiet();
+
+        const result = await pullRepo(clonePath);
+        expect(result.success).toBe(false);
+        expect(result.message).toBe("error");
+        expect(result.error).toBeTruthy();
+      } finally {
+        await rm(clonePath, { recursive: true, force: true });
+        await origin.cleanup();
       }
     });
   });
@@ -304,7 +406,9 @@ describe("git.ts", () => {
     test("returns exists error when creating existing branch", async () => {
       const repo = await createTempRepo();
       try {
-        const result = await checkoutBranch(repo.path, "main", { create: true });
+        const result = await checkoutBranch(repo.path, "main", {
+          create: true,
+        });
         expect(result.success).toBe(false);
         expect(result.message).toBe("exists");
       } finally {
