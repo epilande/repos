@@ -76,7 +76,14 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
 
           let result: RepoOperationResult;
 
-          if (exists) {
+          if (exists && options.skipExisting) {
+            result = {
+              name: repo.name,
+              success: true,
+              message: "skipped",
+              details: "already exists",
+            };
+          } else if (exists) {
             result = await pullRepo(targetPath);
             if (result.success && result.message === "up-to-date") {
               result.message = "already up-to-date";
@@ -109,7 +116,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
       setResults(opResults.filter(Boolean));
       setPhase(cancelled ? "cancelled" : "done");
     },
-    [options.parallel, options.shallow],
+    [options.parallel, options.shallow, options.skipExisting],
   );
 
   useEffect(() => {
@@ -167,7 +174,11 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
             dryRunResults.push({
               name: repo.name,
               success: true,
-              message: exists ? "would pull" : "would clone",
+              message: exists
+                ? options.skipExisting
+                  ? "would skip"
+                  : "would pull"
+                : "would clone",
               details: `Last activity: ${repo.pushedAt.slice(0, 10)}`,
             });
           }
@@ -288,6 +299,9 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
   const cloned = results.filter((r) => r.message === "cloned").length;
   const pulled = results.filter(
     (r) => r.message === "pulled" || r.message === "already up-to-date",
+  ).length;
+  const skipped = results.filter(
+    (r) => r.success && r.message === "skipped",
   ).length;
   const failed = results.filter((r) => !r.success).length;
   const duration = Math.round((Date.now() - startTime) / 1000);
@@ -425,10 +439,13 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
                 <>
                   <Text color="green">Cloned: {cloned}</Text>
                   <Text color="cyan">Pulled: {pulled}</Text>
+                  {skipped > 0 && (
+                    <Text color="yellow">Skipped: {skipped}</Text>
+                  )}
                   {failed > 0 && <Text color="red">Failed: {failed}</Text>}
                   {phase === "cancelled" && (
                     <Text color="yellow">
-                      Skipped: {repos.length - results.length}
+                      Not processed: {repos.length - results.length}
                     </Text>
                   )}
                   <Text dimColor>Duration: {duration}s</Text>

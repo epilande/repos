@@ -504,9 +504,15 @@ export async function ciClone(options: CloneOptions): Promise<void> {
     );
     for (const repo of activeRepos) {
       const exists = await directoryExists(repo.name);
-      const action = exists ? "would pull" : "would clone";
+      const skip = exists && options.skipExisting;
+      const icon = skip ? "○" : exists ? "↓" : "+";
+      const action = skip
+        ? "would skip"
+        : exists
+          ? "would pull"
+          : "would clone";
       console.log(
-        `  ${exists ? "↓" : "+"} ${pad(repo.name, 28)} ${action}  (last activity: ${repo.pushedAt.slice(0, 10)})`,
+        `  ${icon} ${pad(repo.name, 28)} ${action}  (last activity: ${repo.pushedAt.slice(0, 10)})`,
       );
     }
     return;
@@ -517,6 +523,14 @@ export async function ciClone(options: CloneOptions): Promise<void> {
     activeRepos,
     async (repo: GitHubRepo) => {
       const exists = await directoryExists(repo.name);
+      if (exists && options.skipExisting) {
+        return {
+          name: repo.name,
+          success: true,
+          message: "skipped",
+          details: "already exists",
+        };
+      }
       if (exists) {
         const result = await pullRepo(repo.name);
         if (result.success && result.message === "up-to-date") {
@@ -533,7 +547,8 @@ export async function ciClone(options: CloneOptions): Promise<void> {
   );
 
   for (const r of results) {
-    const icon = r.success ? "✓" : "✗";
+    const icon =
+      r.success && r.message === "skipped" ? "○" : r.success ? "✓" : "✗";
     const msg = r.error ? `${r.message} (${r.error})` : r.message;
     console.log(`${icon} ${pad(r.name, 28)} ${msg}`);
   }
@@ -542,10 +557,16 @@ export async function ciClone(options: CloneOptions): Promise<void> {
   const pulled = results.filter(
     (r) => r.message === "pulled" || r.message === "already up-to-date",
   ).length;
+  const skipped = results.filter(
+    (r) => r.success && r.message === "skipped",
+  ).length;
   const failed = results.filter((r) => !r.success).length;
 
   console.log();
-  console.log(`Cloned: ${cloned}  Pulled: ${pulled}  Failed: ${failed}`);
+  const skippedSegment = skipped > 0 ? `  Skipped: ${skipped}` : "";
+  console.log(
+    `Cloned: ${cloned}  Pulled: ${pulled}${skippedSegment}  Failed: ${failed}`,
+  );
 }
 
 // ── Config ───────────────────────────────────────────────────────
