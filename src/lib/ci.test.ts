@@ -1,4 +1,8 @@
 import { describe, test, expect, spyOn } from "bun:test";
+import { mkdir, rm } from "fs/promises";
+import { join } from "path";
+import { tmpdir } from "os";
+import { randomUUID } from "crypto";
 import {
   ciStatus,
   ciFetch,
@@ -8,8 +12,11 @@ import {
   ciClean,
   ciConfig,
   ciPull,
+  ciClone,
 } from "./ci.js";
+import * as github from "./github.js";
 import { createTempRepoDir } from "../../tests/helpers/temp-repos.js";
+import { makeGitHubRepo } from "../../tests/helpers/github-fixtures.js";
 
 // Capture console.log and console.error output
 function captureOutput() {
@@ -360,6 +367,89 @@ describe("CI output", () => {
       } finally {
         out.restore();
         await cleanup();
+      }
+    });
+  });
+
+  describe("ciClone", () => {
+    test("skips existing repos with skipExisting instead of pulling", async () => {
+      const tempDir = join(
+        tmpdir(),
+        `repos-ciclone-${randomUUID().slice(0, 8)}`,
+      );
+      await mkdir(join(tempDir, "existing-repo"), { recursive: true });
+      const originalCwd = process.cwd();
+      process.chdir(tempDir);
+
+      const listReposSpy = spyOn(github, "listRepos").mockResolvedValue([
+        makeGitHubRepo("existing-repo"),
+      ]);
+      const getGitHubConfigSpy = spyOn(
+        github,
+        "getGitHubConfig",
+      ).mockResolvedValue({
+        host: "github.com",
+        apiUrl: "https://api.github.com",
+      });
+      const exitSpy = spyOn(process, "exit").mockImplementation((() => {
+        throw new Error("process.exit called");
+      }) as never);
+      const out = captureOutput();
+
+      try {
+        await ciClone({ org: "test-org", skipExisting: true });
+        const output = out.output();
+
+        expect(output).toContain("skipped");
+        expect(output).toContain("Skipped: 1");
+        expect(output).not.toContain("Pulled: 1");
+      } finally {
+        out.restore();
+        listReposSpy.mockRestore();
+        getGitHubConfigSpy.mockRestore();
+        exitSpy.mockRestore();
+        process.chdir(originalCwd);
+        await rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    test("dry run with skipExisting previews existing repos as 'would skip'", async () => {
+      const tempDir = join(
+        tmpdir(),
+        `repos-ciclone-${randomUUID().slice(0, 8)}`,
+      );
+      await mkdir(join(tempDir, "existing-repo"), { recursive: true });
+      const originalCwd = process.cwd();
+      process.chdir(tempDir);
+
+      const listReposSpy = spyOn(github, "listRepos").mockResolvedValue([
+        makeGitHubRepo("existing-repo"),
+      ]);
+      const getGitHubConfigSpy = spyOn(
+        github,
+        "getGitHubConfig",
+      ).mockResolvedValue({
+        host: "github.com",
+        apiUrl: "https://api.github.com",
+      });
+      const exitSpy = spyOn(process, "exit").mockImplementation((() => {
+        throw new Error("process.exit called");
+      }) as never);
+      const out = captureOutput();
+
+      try {
+        await ciClone({ org: "test-org", skipExisting: true, dryRun: true });
+        const output = out.output();
+
+        expect(output).toContain("would skip");
+        expect(output).not.toContain("would pull");
+      } finally {
+        out.restore();
+        listReposSpy.mockRestore();
+        getGitHubConfigSpy.mockRestore();
+        exitSpy.mockRestore();
+        process.chdir(originalCwd);
+        await rm(tempDir, { recursive: true, force: true });
       }
     });
   });

@@ -44,28 +44,78 @@ const menuGroups: MenuGroup[] = [
     category: "git",
     label: "Git Operations",
     items: [
-      { label: "Status", value: "status", key: "s", description: "Check status of all repositories" },
-      { label: "Fetch", value: "fetch", key: "f", description: "Fetch updates from remote repositories" },
-      { label: "Pull", value: "pull", key: "p", description: "Pull changes into clean repositories" },
-      { label: "Diff", value: "diff", key: "d", description: "Show uncommitted changes across repos" },
-      { label: "Checkout", value: "checkout", key: "c", description: "Switch branches across repositories" },
+      {
+        label: "Status",
+        value: "status",
+        key: "s",
+        description: "Check status of all repositories",
+      },
+      {
+        label: "Fetch",
+        value: "fetch",
+        key: "f",
+        description: "Fetch updates from remote repositories",
+      },
+      {
+        label: "Pull",
+        value: "pull",
+        key: "p",
+        description: "Pull changes into clean repositories",
+      },
+      {
+        label: "Diff",
+        value: "diff",
+        key: "d",
+        description: "Show uncommitted changes across repos",
+      },
+      {
+        label: "Checkout",
+        value: "checkout",
+        key: "c",
+        description: "Switch branches across repositories",
+      },
     ],
   },
   {
     category: "repo",
     label: "Management",
     items: [
-      { label: "Clone", value: "clone", key: "o", description: "Clone repositories from GitHub organization" },
-      { label: "Clean", value: "clean", key: "x", description: "Remove untracked and ignored files" },
-      { label: "Exec", value: "exec", key: "e", description: "Execute command in all repositories" },
+      {
+        label: "Clone",
+        value: "clone",
+        key: "o",
+        description: "Clone repositories from GitHub organization",
+      },
+      {
+        label: "Clean",
+        value: "clean",
+        key: "x",
+        description: "Remove untracked and ignored files",
+      },
+      {
+        label: "Exec",
+        value: "exec",
+        key: "e",
+        description: "Execute command in all repositories",
+      },
     ],
   },
   {
     category: "settings",
     label: "Settings",
     items: [
-      { label: "Config", value: "config", key: "g", description: "View and edit configuration" },
-      { label: "Init", value: "init", key: "i", description: "Initialize repos in current directory" },
+      {
+        label: "Config",
+        value: "config",
+        key: "g",
+        description: "View and edit configuration",
+      },
+      {
+        label: "Init",
+        value: "init",
+        key: "i",
+        description: "Initialize repos in current directory",
+      },
     ],
   },
 ];
@@ -94,6 +144,13 @@ function getCommandFields(
           type: "toggle",
           defaultValue: false,
           hint: "Faster cloning with less disk space (no full history)",
+        },
+        {
+          name: "skipExisting",
+          label: "Skip existing",
+          type: "toggle",
+          defaultValue: false,
+          hint: "Only clone new repos; don't pull existing ones",
         },
         {
           name: "org",
@@ -538,6 +595,7 @@ export function App() {
           options: {
             dryRun: values.dryRun as boolean | undefined,
             shallow: values.shallow as boolean | undefined,
+            skipExisting: values.skipExisting as boolean | undefined,
             org: values.org as string | undefined,
             days: values.days as number | undefined,
             parallel: values.parallel as number | undefined,
@@ -631,11 +689,7 @@ export function App() {
           />
         );
       case "init":
-        return (
-          <InitApp
-            onComplete={handleCommandComplete}
-          />
-        );
+        return <InitApp onComplete={handleCommandComplete} />;
     }
   }
 
@@ -691,9 +745,7 @@ export function App() {
           </Text>
           <Text dimColor> - Repository Manager</Text>
         </Box>
-        {repoCount !== null && (
-          <Text dimColor>{repoCount} repos tracked</Text>
-        )}
+        {repoCount !== null && <Text dimColor>{repoCount} repos tracked</Text>}
       </Box>
       <GroupedMenu groups={menuGroups} onSelect={handleSelect} />
     </Box>

@@ -135,6 +135,7 @@ program
     parseInt,
   )
   .option("-s, --shallow", "Shallow clone (faster, uses less disk space)")
+  .option("--skip-existing", "Only clone new repos; don't pull existing ones")
   .action(async (options) => {
     await runClone({
       dryRun: options.dryRun,
@@ -143,6 +144,7 @@ program
       days: options.days,
       parallel: options.parallel,
       shallow: options.shallow,
+      skipExisting: options.skipExisting,
     });
   });
 

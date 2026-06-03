@@ -181,8 +181,12 @@ repos clone --host github.abc.com  # Clone from GitHub Enterprise
 repos clone --days 30              # Only repos active in last 30 days
 repos clone --parallel 5           # Limit concurrent clone operations
 repos clone --shallow              # Shallow clone (faster)
+repos clone --skip-existing        # Only clone new repos; don't pull existing ones
 repos clone --dry-run              # Preview what would be cloned
 ```
+
+> [!NOTE]
+> By default, clone pulls repos that already exist locally (and clones the rest). Pass `--skip-existing` to clone only new repos and leave existing ones untouched.
 
 ### Diff Command
 

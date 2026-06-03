@@ -63,6 +63,7 @@ export interface CloneOptions {
   days?: number;
   parallel?: number;
   shallow?: boolean;
+  skipExisting?: boolean;
   interactive?: boolean;
 }
 
@@ -157,4 +158,3 @@ export interface OperationStats {
   failed: number;
   skipped: number;
 }
-

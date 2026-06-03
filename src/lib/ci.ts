@@ -20,18 +20,13 @@ import {
   fetchRepo,
   pullRepo,
   cleanRepo,
-  cloneRepo,
   diffRepo,
   checkoutBranch,
   execInRepo,
   type FetchRepoOptions,
 } from "./git.js";
-import {
-  listRepos,
-  filterActiveRepos,
-  getCloneUrl,
-  getGitHubConfig,
-} from "./github.js";
+import { listRepos, filterActiveRepos, getGitHubConfig } from "./github.js";
+import { cloneOrPullRepo, previewCloneAction } from "./clone-actions.js";
 import { formatSync } from "./format.js";
 import type {
   StatusOptions,
@@ -504,9 +499,10 @@ export async function ciClone(options: CloneOptions): Promise<void> {
     );
     for (const repo of activeRepos) {
       const exists = await directoryExists(repo.name);
-      const action = exists ? "would pull" : "would clone";
+      const action = previewCloneAction(exists, options.skipExisting);
+      const icon = action === "skip" ? "○" : action === "pull" ? "↓" : "+";
       console.log(
-        `  ${exists ? "↓" : "+"} ${pad(repo.name, 28)} ${action}  (last activity: ${repo.pushedAt.slice(0, 10)})`,
+        `  ${icon} ${pad(repo.name, 28)} would ${action}  (last activity: ${repo.pushedAt.slice(0, 10)})`,
       );
     }
     return;
@@ -515,25 +511,13 @@ export async function ciClone(options: CloneOptions): Promise<void> {
   const concurrency = options.parallel ?? config.parallel ?? 10;
   const { results } = await runParallel<RepoOperationResult, GitHubRepo>(
     activeRepos,
-    async (repo: GitHubRepo) => {
-      const exists = await directoryExists(repo.name);
-      if (exists) {
-        const result = await pullRepo(repo.name);
-        if (result.success && result.message === "up-to-date") {
-          result.message = "already up-to-date";
-        } else if (result.success) {
-          result.message = "pulled";
-        }
-        return result;
-      }
-      const cloneUrl = getCloneUrl(repo);
-      return cloneRepo(cloneUrl, repo.name, { shallow: options.shallow });
-    },
+    (repo: GitHubRepo) => cloneOrPullRepo(repo, options),
     concurrency,
   );
 
   for (const r of results) {
-    const icon = r.success ? "✓" : "✗";
+    const icon =
+      r.success && r.message === "skipped" ? "○" : r.success ? "✓" : "✗";
     const msg = r.error ? `${r.message} (${r.error})` : r.message;
     console.log(`${icon} ${pad(r.name, 28)} ${msg}`);
   }
@@ -542,10 +526,16 @@ export async function ciClone(options: CloneOptions): Promise<void> {
   const pulled = results.filter(
     (r) => r.message === "pulled" || r.message === "already up-to-date",
   ).length;
+  const skipped = results.filter(
+    (r) => r.success && r.message === "skipped",
+  ).length;
   const failed = results.filter((r) => !r.success).length;
 
   console.log();
-  console.log(`Cloned: ${cloned}  Pulled: ${pulled}  Failed: ${failed}`);
+  const skippedSegment = skipped > 0 ? `  Skipped: ${skipped}` : "";
+  console.log(
+    `Cloned: ${cloned}  Pulled: ${pulled}${skippedSegment}  Failed: ${failed}`,
+  );
 }
 
 // ── Config ───────────────────────────────────────────────────────

@@ -6,10 +6,9 @@ import { isInteractive } from "../lib/tty.js";
 import {
   listRepos,
   filterActiveRepos,
-  getCloneUrl,
   getGitHubConfig,
 } from "../lib/github.js";
-import { cloneRepo, pullRepo } from "../lib/git.js";
+import { cloneOrPullRepo, previewCloneAction } from "../lib/clone-actions.js";
 import { directoryExists, runParallel } from "../lib/repos.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { ResultList, OperationStats } from "../components/RepoList.js";
@@ -71,24 +70,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
           currentlyActive.add(repo.name);
           setActiveReposSet(new Set(currentlyActive));
 
-          const targetPath = repo.name;
-          const exists = await directoryExists(targetPath);
-
-          let result: RepoOperationResult;
-
-          if (exists) {
-            result = await pullRepo(targetPath);
-            if (result.success && result.message === "up-to-date") {
-              result.message = "already up-to-date";
-            } else if (result.success) {
-              result.message = "pulled";
-            }
-          } else {
-            const cloneUrl = getCloneUrl(repo);
-            result = await cloneRepo(cloneUrl, targetPath, {
-              shallow: options.shallow,
-            });
-          }
+          const result = await cloneOrPullRepo(repo, options);
 
           currentlyActive.delete(repo.name);
           setActiveReposSet(new Set(currentlyActive));
@@ -109,7 +91,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
       setResults(opResults.filter(Boolean));
       setPhase(cancelled ? "cancelled" : "done");
     },
-    [options.parallel, options.shallow],
+    [options.parallel, options.shallow, options.skipExisting],
   );
 
   useEffect(() => {
@@ -164,10 +146,11 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
           const dryRunResults: RepoOperationResult[] = [];
           for (const repo of activeRepos) {
             const exists = await directoryExists(repo.name);
+            const action = previewCloneAction(exists, options.skipExisting);
             dryRunResults.push({
               name: repo.name,
               success: true,
-              message: exists ? "would pull" : "would clone",
+              message: `would ${action}`,
               details: `Last activity: ${repo.pushedAt.slice(0, 10)}`,
             });
           }
@@ -288,6 +271,9 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
   const cloned = results.filter((r) => r.message === "cloned").length;
   const pulled = results.filter(
     (r) => r.message === "pulled" || r.message === "already up-to-date",
+  ).length;
+  const skipped = results.filter(
+    (r) => r.success && r.message === "skipped",
   ).length;
   const failed = results.filter((r) => !r.success).length;
   const duration = Math.round((Date.now() - startTime) / 1000);
@@ -425,10 +411,13 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
                 <>
                   <Text color="green">Cloned: {cloned}</Text>
                   <Text color="cyan">Pulled: {pulled}</Text>
+                  {skipped > 0 && (
+                    <Text color="yellow">Skipped: {skipped}</Text>
+                  )}
                   {failed > 0 && <Text color="red">Failed: {failed}</Text>}
                   {phase === "cancelled" && (
                     <Text color="yellow">
-                      Skipped: {repos.length - results.length}
+                      Not processed: {repos.length - results.length}
                     </Text>
                   )}
                   <Text dimColor>Duration: {duration}s</Text>
