@@ -6,10 +6,9 @@ import { isInteractive } from "../lib/tty.js";
 import {
   listRepos,
   filterActiveRepos,
-  getCloneUrl,
   getGitHubConfig,
 } from "../lib/github.js";
-import { cloneRepo, pullRepo } from "../lib/git.js";
+import { cloneOrPullRepo, previewCloneAction } from "../lib/clone-actions.js";
 import { directoryExists, runParallel } from "../lib/repos.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { ResultList, OperationStats } from "../components/RepoList.js";
@@ -71,31 +70,7 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
           currentlyActive.add(repo.name);
           setActiveReposSet(new Set(currentlyActive));
 
-          const targetPath = repo.name;
-          const exists = await directoryExists(targetPath);
-
-          let result: RepoOperationResult;
-
-          if (exists && options.skipExisting) {
-            result = {
-              name: repo.name,
-              success: true,
-              message: "skipped",
-              details: "already exists",
-            };
-          } else if (exists) {
-            result = await pullRepo(targetPath);
-            if (result.success && result.message === "up-to-date") {
-              result.message = "already up-to-date";
-            } else if (result.success) {
-              result.message = "pulled";
-            }
-          } else {
-            const cloneUrl = getCloneUrl(repo);
-            result = await cloneRepo(cloneUrl, targetPath, {
-              shallow: options.shallow,
-            });
-          }
+          const result = await cloneOrPullRepo(repo, options);
 
           currentlyActive.delete(repo.name);
           setActiveReposSet(new Set(currentlyActive));
@@ -171,14 +146,11 @@ export function CloneApp({ options, onComplete }: CloneAppProps) {
           const dryRunResults: RepoOperationResult[] = [];
           for (const repo of activeRepos) {
             const exists = await directoryExists(repo.name);
+            const action = previewCloneAction(exists, options.skipExisting);
             dryRunResults.push({
               name: repo.name,
               success: true,
-              message: exists
-                ? options.skipExisting
-                  ? "would skip"
-                  : "would pull"
-                : "would clone",
+              message: `would ${action}`,
               details: `Last activity: ${repo.pushedAt.slice(0, 10)}`,
             });
           }

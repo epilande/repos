@@ -16,6 +16,7 @@ import {
 } from "./ci.js";
 import * as github from "./github.js";
 import { createTempRepoDir } from "../../tests/helpers/temp-repos.js";
+import { makeGitHubRepo } from "../../tests/helpers/github-fixtures.js";
 
 // Capture console.log and console.error output
 function captureOutput() {
@@ -371,18 +372,6 @@ describe("CI output", () => {
   });
 
   describe("ciClone", () => {
-    function fakeRepo(name: string) {
-      return {
-        name,
-        fullName: `test-org/${name}`,
-        cloneUrl: `https://example.com/${name}.git`,
-        sshUrl: `git@example.com:${name}.git`,
-        pushedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        archived: false,
-      };
-    }
-
     test("skips existing repos with skipExisting instead of pulling", async () => {
       const tempDir = join(
         tmpdir(),
@@ -393,7 +382,7 @@ describe("CI output", () => {
       process.chdir(tempDir);
 
       const listReposSpy = spyOn(github, "listRepos").mockResolvedValue([
-        fakeRepo("existing-repo"),
+        makeGitHubRepo("existing-repo"),
       ]);
       const getGitHubConfigSpy = spyOn(
         github,
@@ -434,7 +423,7 @@ describe("CI output", () => {
       process.chdir(tempDir);
 
       const listReposSpy = spyOn(github, "listRepos").mockResolvedValue([
-        fakeRepo("existing-repo"),
+        makeGitHubRepo("existing-repo"),
       ]);
       const getGitHubConfigSpy = spyOn(
         github,

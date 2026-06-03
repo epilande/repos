@@ -6,6 +6,7 @@ import { tmpdir } from "os";
 import { randomUUID } from "crypto";
 import { $ } from "bun";
 import { waitFor } from "../../tests/helpers/ink-test-utils.js";
+import { makeGitHubRepo } from "../../tests/helpers/github-fixtures.js";
 import * as github from "../lib/github.js";
 
 async function createBareRepo(
@@ -29,18 +30,6 @@ async function createBareRepo(
   await rm(workPath, { recursive: true, force: true });
 
   return barePath;
-}
-
-function makeGitHubRepo(name: string, cloneUrl: string) {
-  return {
-    name,
-    fullName: `test-org/${name}`,
-    cloneUrl,
-    sshUrl: cloneUrl,
-    pushedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    archived: false,
-  };
 }
 
 async function setupBareRepos(bareDir: string, names: string[]) {
