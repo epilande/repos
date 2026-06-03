@@ -293,4 +293,96 @@ describe("CloneApp", () => {
       await cleanup();
     }
   });
+
+  test("skips existing repos with --skip-existing instead of pulling", async () => {
+    const { fakeRepos, barePaths } = await setupBareRepos(bareDir, [
+      "existing-repo",
+    ]);
+    await $`git clone ${barePaths[0]} ${join(workDir, "existing-repo")}`.quiet();
+    listReposSpy.mockResolvedValue(fakeRepos);
+
+    const { CloneApp } = await loadCloneApp();
+
+    try {
+      const { lastFrame, unmount } = render(
+        <CloneApp
+          options={{ org: "test-org", skipExisting: true }}
+          onComplete={() => {}}
+        />,
+      );
+
+      await waitFor(() => lastFrame()?.includes("Summary") ?? false, 15000);
+
+      const frame = lastFrame()!;
+      expect(frame).not.toContain("Failed:");
+      expect(frame).toContain("Skipped: 1");
+      expect(frame).toContain("Pulled: 0");
+      expect(frame).toContain("Cloned: 0");
+      unmount();
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test("clones new repos and skips existing ones with --skip-existing", async () => {
+    const { fakeRepos, barePaths } = await setupBareRepos(bareDir, [
+      "existing-repo",
+      "new-repo",
+    ]);
+    await $`git clone ${barePaths[0]} ${join(workDir, "existing-repo")}`.quiet();
+    listReposSpy.mockResolvedValue(fakeRepos);
+
+    const { CloneApp } = await loadCloneApp();
+
+    try {
+      const { lastFrame, unmount } = render(
+        <CloneApp
+          options={{ org: "test-org", skipExisting: true }}
+          onComplete={() => {}}
+        />,
+      );
+
+      await waitFor(() => lastFrame()?.includes("Summary") ?? false, 15000);
+
+      const frame = lastFrame()!;
+      expect(frame).not.toContain("Failed:");
+      expect(frame).toContain("Cloned: 1");
+      expect(frame).toContain("Skipped: 1");
+      expect(frame).toContain("Pulled: 0");
+      unmount();
+    } finally {
+      await cleanup();
+    }
+  });
+
+  test("dry run with --skip-existing previews existing repos as 'would skip'", async () => {
+    const { fakeRepos, barePaths } = await setupBareRepos(bareDir, [
+      "existing-repo",
+    ]);
+    await $`git clone ${barePaths[0]} ${join(workDir, "existing-repo")}`.quiet();
+    listReposSpy.mockResolvedValue(fakeRepos);
+
+    const { CloneApp } = await loadCloneApp();
+
+    try {
+      const { lastFrame, unmount } = render(
+        <CloneApp
+          options={{ org: "test-org", skipExisting: true, dryRun: true }}
+          onComplete={() => {}}
+        />,
+      );
+
+      await waitFor(
+        () => lastFrame()?.includes("Dry run complete") ?? false,
+        15000,
+      );
+
+      const frame = lastFrame()!;
+      expect(frame).toContain("would skip");
+      expect(frame).not.toContain("would pull");
+      unmount();
+    } finally {
+      await cleanup();
+    }
+  });
 });
